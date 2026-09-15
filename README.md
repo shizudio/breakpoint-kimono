@@ -27,7 +27,7 @@ Four things in `site/index.html` are still the prototype's simulation:
    This is the highest-value thing to wire up: it is the only path on the page
    that could capture a real buyer today, since the wallet flow is simulated. A
    Vercel route handler writing to a sheet, a Telegram bot message, or a form
-   service are each an afternoon. Send `{ name, x, tg }` — the client already
+   service are each an afternoon. Send `{ name, email, x, tg }` — the client already
    normalises pasted profile URLs to a bare handle.
 4. **The buyer list is mock data** (`state.buyers`). Count, fill bar, proof line,
    leaderboard and the sold-out state all derive from it, so wiring one API
@@ -88,18 +88,20 @@ turntable's height budget. Hero integrity holds from 900px down to 480px.
 
 ## Order form
 
-Collects **name**, **X account** and **Telegram** — no email. Name is required,
-plus at least one of the two handles, because without an email a handle is the
-only route back to the buyer.
+Collects **name**, **email**, **X account** and **Telegram**. Name and email are
+required; the handles are optional and feed the order card.
 
 - Pasted profile URLs are normalised to a bare handle on blur:
   `https://x.com/foo?s=21`, `x.com/foo`, `@foo` and `t.me/foo/` all become `foo`.
 - Handle shapes are checked against the real limits — X is 1–15 of
   `[A-Za-z0-9_]`, Telegram 5–32.
+- Email validation is deliberately loose (`something@something.tld`). The only
+  real authority on an address is sending to it, and strict regexes reject valid
+  addresses.
 - Errors appear per field, and only after a field has been marked once, so
   nobody is scolded mid-typing. The errored underline turns `#9945FF`; the
   palette has no red and the system forbids inventing one.
-- The confirmation names the account back ("…send payment details to @foo on
-  X"), so a typo surfaces there rather than in silence.
+- The confirmation names the address back ("…send payment details to
+  you@example.com"), so a typo surfaces there rather than in silence.
 - Fields use real `<label>` elements at the system's 9.5px micro-label spec,
   rather than placeholder-as-label.
