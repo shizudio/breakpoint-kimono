@@ -813,6 +813,25 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     locked = on;
     document.documentElement.style.overflow = on ? "hidden" : "";
     document.body.style.overflow = on ? "hidden" : "";
+    // The hero must be on screen whenever it owns the scroll. Without this, a
+    // refresh part-way down the page restores that position, locks it, and
+    // strands the visitor: every scroll is eaten by a turntable they cannot see.
+    if (on && scroller().scrollTop > 0) window.scrollTo(0, 0);
+  }
+  // We own the scroll position, not the browser's restore — but only when the hero
+  // actually takes the scroll. Under reduced motion there is no lock, so leave the
+  // browser free to put the visitor back where they were.
+  if (!reduceMotion && "scrollRestoration" in history) {
+    try { history.scrollRestoration = "manual"; } catch (e) {}
+  }
+
+  function resetToHero() {
+    targetP = 0; curP = null; frame = 0; holdStart = null; endAt = null;
+    if (raf) { cancelAnimationFrame(raf); raf = null; }
+    img.src = FRAMES_DIR + "f00.jpg";
+    window.scrollTo(0, 0);
+    setLock(true);
+    drive();
   }
   function drive() {
     if (raf) return;
@@ -869,7 +888,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   if (!reduceMotion) {
+    window.scrollTo(0, 0);
     setLock(true);
+    // Restored from bfcache the script does not re-run, so the frozen lock and
+    // scroll position come back with it. Put the visitor back at the hero.
+    window.addEventListener("pageshow", function (e) { if (e.persisted) resetToHero(); });
     window.addEventListener("wheel", onWheel, { passive: false });
     window.addEventListener("touchstart", onTouchStart, { passive: true });
     window.addEventListener("touchmove", onTouchMove, { passive: false });

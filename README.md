@@ -189,6 +189,20 @@ The card is a fixed image, so every buyer posts the same one; the piece number
 lives in the tweet text instead. Per-buyer cards need a rendered
 `/o/<id>` route — see the note on `@vercel/og` above.
 
+## The hero owns the scroll position
+
+The hero locks the page on load, so it must also control where the page sits.
+Left to the browser, `history.scrollRestoration` puts a refreshing visitor back
+where they were — say 3000px down — and the lock then freezes them there with
+every wheel and swipe consumed by a turntable that is off screen at the top.
+It reads as a completely dead page and only recovers after 2600px of scrolling
+into nothing.
+
+So: `scrollRestoration` is set to `manual` (only when the lock is active — under
+reduced motion the browser keeps its normal restore), `setLock(true)` forces the
+page to the top, and a `pageshow` with `persisted` resets to the hero, because a
+bfcache restore brings back the frozen lock without re-running the script.
+
 ## Cache-busting the turntable
 
 Frames are served `immutable, max-age=31536000`, so **a new turntable must land
