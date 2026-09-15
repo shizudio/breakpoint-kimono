@@ -161,6 +161,15 @@ all**:
 `twitter:` tags are hard-coded to the vercel.app domain — **update all of them
 together if a custom domain is attached.**
 
+The same image is the order card in the modal's final step, replacing the flat
+purple→green gradient block. The handle and piece number stay as DOM text in the
+row beneath it, so they render crisply at any panel width instead of being baked
+into a 370px-wide bitmap.
+
+Note the `<img>` keeps its `width`/`height` attributes for CLS, so the CSS must
+set `height:auto` — an explicit height attribute beats `aspect-ratio` and
+crops the artwork to a tall slice.
+
 The card is a fixed image, so every buyer posts the same one; the piece number
 lives in the tweet text instead. Per-buyer cards need a rendered
 `/o/<id>` route — see the note on `@vercel/og` above.
