@@ -14,7 +14,7 @@ Local preview:
 
 ## Before this takes real money
 
-Three things in `site/index.html` are still the prototype's simulation:
+Four things in `site/index.html` are still the prototype's simulation:
 
 1. **`PRESALE_ENDS`** (top of the script) is a hard-coded date. It is shared by
    every visitor — which is the fix for the prototype's per-visitor localStorage
@@ -22,7 +22,14 @@ Three things in `site/index.html` are still the prototype's simulation:
 2. **The wallet flow does not touch a chain.** Picking a wallet and pressing
    "300 USDC" advances the modal and increments the local buyer list. Nothing is
    charged and nothing is recorded.
-3. **The buyer list is mock data** (`state.buyers`). Count, fill bar, proof line,
+3. **The order form has no destination.** It validates and shows a
+   confirmation, but the submit handler POSTs nowhere — the request is dropped.
+   This is the highest-value thing to wire up: it is the only path on the page
+   that could capture a real buyer today, since the wallet flow is simulated. A
+   Vercel route handler writing to a sheet, a Telegram bot message, or a form
+   service are each an afternoon. Send `{ name, x, tg }` — the client already
+   normalises pasted profile URLs to a bare handle.
+4. **The buyer list is mock data** (`state.buyers`). Count, fill bar, proof line,
    leaderboard and the sold-out state all derive from it, so wiring one API
    response into that array lights up the whole page.
 
