@@ -10,8 +10,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="2026 Breakpoint Kimono — Shizudio">
 <meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
-<meta property="og:image" content="web/modeling.jpg">
+<meta property="og:url" content="https://breakpoint-kimono.vercel.app/">
+<meta property="og:image" content="https://breakpoint-kimono.vercel.app/web/share-card.jpg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="600">
+<meta property="og:image:alt" content="The 2026 Breakpoint Kimono — My Breakpoint Kimono, Reserved.">
 <meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://breakpoint-kimono.vercel.app/web/share-card.jpg">
+<meta name="twitter:image:alt" content="The 2026 Breakpoint Kimono — My Breakpoint Kimono, Reserved.">
 <meta name="twitter:site" content="@shizudio">
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -384,6 +390,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
   var WALLETS = ["Phantom", "Solflare", "Backpack"];
   var FRAMES = 72;
+  var SHARE_URL = "https://breakpoint-kimono.vercel.app/";
   var SPAN = 2600; // px of wheel travel for one full rotation
   var HOLD = 900;  // ms the finished turntable is held before the page releases
   var END  = 0.9999; // "rotation complete" — float-safe, the notches never sum to exactly 1
@@ -650,7 +657,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       ]));
       var post = el("button", { class: "btn-invert", type: "button", text: "Post on X" });
       post.addEventListener("click", function () {
-        window.open("https://x.com/intent/tweet?text=" + encodeURIComponent("Reserved my Breakpoint Kimono — one of fifteen. @shizudio, Solana Breakpoint 2026."), "_blank");
+        // The URL is what makes X render the card — text alone unfurls nothing.
+        var piece = count();
+        var msg = "Reserved my Breakpoint Kimono — piece " + piece + " of 15. @shizudio, Solana Breakpoint 2026.";
+        window.open("https://x.com/intent/tweet?text=" + encodeURIComponent(msg) +
+                    "&url=" + encodeURIComponent(SHARE_URL), "_blank");
       });
       panel.appendChild(el("p", {
         class: "preview-note",

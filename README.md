@@ -141,3 +141,26 @@ close behind at ~18dB; a spike means a dropped or duplicated frame.
 No WebP/AVIF here — this machine has no encoder for either. WebP would cut
 roughly a third off at equal quality and is worth doing in CI if the preload
 ever needs to get lighter.
+
+## Share card
+
+`site/web/share-card.jpg` — 1200×600 (2:1), the shape `summary_large_image`
+wants. Generated from `source/thumbnail.png` (1774×887):
+
+    ffmpeg -i source/thumbnail.png -vf "scale=1200:600:flags=lanczos" \
+           -q:v 3 site/web/share-card.jpg
+
+Two bugs fixed alongside it, either of which alone meant **no card rendered at
+all**:
+
+1. `og:image` was a relative path. The Open Graph spec requires an absolute URL;
+   crawlers do not resolve relative ones.
+2. The share button tweeted text with no URL, so X had nothing to unfurl.
+
+`SHARE_URL` at the top of the script and the absolute URLs in the `og:`/
+`twitter:` tags are hard-coded to the vercel.app domain — **update all of them
+together if a custom domain is attached.**
+
+The card is a fixed image, so every buyer posts the same one; the piece number
+lives in the tweet text instead. Per-buyer cards need a rendered
+`/o/<id>` route — see the note on `@vercel/og` above.
