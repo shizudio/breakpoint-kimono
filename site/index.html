@@ -89,6 +89,10 @@ img{display:block}
 
 /* ---- sections ---- */
 .two-col{margin:0 auto;padding:clamp(28px,3.4vw,48px) clamp(28px,4vw,40px) clamp(40px,5vw,68px);display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4vw,56px);align-items:start}
+/* About: always image-left / copy-right. The shared .two-col auto-fit gave the
+   portrait a full half of the row (414px on a 1280 desktop), which dwarfed the
+   copy; this pins a narrower portrait column that never collapses. */
+.about-grid{grid-template-columns:clamp(180px,32%,300px) minmax(0,1fr)}
 figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4}
 
 /* marquee */
@@ -672,7 +676,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       post.addEventListener("click", function () {
         // The URL is what makes X render the card — text alone unfurls nothing.
         var piece = count();
-        var msg = "Reserved my Breakpoint Kimono — piece " + piece + " of 15. @shizudio, Solana Breakpoint 2026.";
+        var msg = "Reserved my Breakpoint Kimono — piece " + piece + " of 15.";
         window.open("https://x.com/intent/tweet?text=" + encodeURIComponent(msg) +
                     "&url=" + encodeURIComponent(SHARE_URL), "_blank");
       });

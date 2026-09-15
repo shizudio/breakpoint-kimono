@@ -78,10 +78,15 @@ so the desktop design is untouched:
 Two layout rules are width-based rather than pointer-based:
 
 - Under 640px the materiality grid drops to one column.
-- Under 640px the About portrait floats left at 40% (max 158px) instead of going
-  full-bleed when the grid collapses. It was rendering 319×399 on a 375px phone
-  and pushing the copy off screen; the heading now sits beside it and the
-  paragraphs wrap underneath, taking the section from 1017px to 648px.
+- The About section is image-left / copy-right at every width. Above 640px it is
+  a pinned two-column grid, `clamp(180px,32%,300px)` for the portrait — the
+  shared `.two-col` auto-fit had been giving it a full half of the row (414px on
+  a 1280 desktop), dwarfing the copy. Below 640px the grid would have collapsed
+  and taken the portrait full-bleed (319×399 on a 375px phone), so the portrait
+  floats left at 40% / max 158px instead: same left-right reading, and the
+  paragraphs keep a usable measure rather than the ~27 characters a true
+  two-column split would leave them. Section height on a 375px phone went from
+  1017px to 648px.
 - On portrait phones the turntable scales to `min(190vw,900px)`. The frames are
   16:9, which letterboxes the garment into a thin band on a portrait screen —
   scaling up and letting the hero's `overflow:hidden` crop the empty sides
