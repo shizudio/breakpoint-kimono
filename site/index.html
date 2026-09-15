@@ -182,6 +182,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 }
 
 @media (max-width:640px){
+  /* The portrait went full-bleed once the grid collapsed — 319px wide and
+     nearly 400 tall, which pushed the copy off the screen. Float it instead so
+     the heading sits beside it and the paragraphs wrap on underneath. */
+  .about-grid{display:block}
+  .about-portrait{float:left;width:40%;max-width:158px;margin:0 16px 14px 0}
+  .about-grid .meta-ledger{clear:both}
   .mat-grid{grid-template-columns:1fr}
   .order-head h2{font-size:34px}
 }
@@ -298,8 +304,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 </section>
 
 <section class="section">
-  <div class="two-col" style="max-width:960px">
-    <div>
+  <div class="two-col about-grid" style="max-width:960px">
+    <div class="about-portrait">
       <img loading="lazy" src="web/portrait.jpg" alt="Shina Foo" style="width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--ground-alt);border:.5px solid var(--hair)">
     </div>
     <div>
