@@ -30,6 +30,12 @@ The 15-piece cap must be enforced server-side; the client bar is display only.
 
 ## Notes carried over from the design handoff
 
+- The hero holds on the finished garment before releasing the page. `HOLD` (ms)
+  is the beat; `END` is the float-safe "rotation complete" test, because the
+  wheel notches sum to 0.9999999999999999 rather than 1. Release also waits for
+  `curP` to settle — releasing on `targetP` alone scrolled the page away while
+  the turntable was still six frames from finishing. A failsafe releases after
+  `HOLD + 2500`ms so a suspended rAF can never trap anyone in the hero.
 - The turntable image is the only `flex:1` child of the hero and must never get a
   `min-height` — it absorbs the fixed-height hero's shortfall. Verified to hold
   from 900px down to 520px of viewport height.

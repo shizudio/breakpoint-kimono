@@ -359,6 +359,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var WALLETS = ["Phantom", "Solflare", "Backpack"];
   var FRAMES = 72;
   var SPAN = 2600; // px of wheel travel for one full rotation
+  var HOLD = 900;  // ms the finished turntable is held before the page releases
+  var END  = 0.9999; // "rotation complete" — float-safe, the notches never sum to exactly 1
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -660,7 +662,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
   /* ---------- turntable: scroll lock + scrub ---------- */
   var img = $("#turntable");
-  var targetP = 0, curP = null, frame = 0, raf = null, locked = false;
+  var targetP = 0, curP = null, frame = 0, raf = null, locked = false, holdStart = null, endAt = null;
 
   function scroller() { return document.scrollingElement || document.documentElement; }
   function setLock(on) {
@@ -676,18 +678,34 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       curP = curP == null ? targetP : curP + (targetP - curP) * 0.18;
       var i = Math.min(FRAMES - 1, Math.max(0, Math.round(curP * (FRAMES - 1))));
       if (i !== frame) { frame = i; img.src = "frames3/f" + pad(i) + ".jpg"; }
+      // Begin the hold as soon as the rotation has visibly settled — not when the
+      // user stops scrolling — so the beat elapses during their natural pause.
+      if (targetP >= END && curP > 0.995 && holdStart == null) holdStart = performance.now();
       if (Math.abs(targetP - curP) > 0.002) raf = requestAnimationFrame(tick);
     });
   }
   function consume(dy) {
     if (locked) {
       targetP = Math.min(1, Math.max(0, targetP + dy / SPAN));
-      if (targetP >= 1 && dy > 0) setLock(false);
+      if (dy < 0) { holdStart = null; endAt = null; } // turning back cancels the hold
+      // The old release fired the instant targetP hit 1, while curP was still
+      // easing — the page scrolled away mid-rotation. Wait for the frames to
+      // settle, then hold a beat on the finished garment before letting go.
+      if (targetP >= END && dy > 0) {
+        var now = performance.now();
+        if (endAt == null) endAt = now;
+        if (holdStart == null && curP != null && curP > 0.995) holdStart = now;
+        var held = holdStart != null && now - holdStart >= HOLD;
+        // Never trap anyone in the hero if the frames cannot settle (a suspended
+        // rAF in a background tab, a frame that will not decode).
+        var failsafe = now - endAt >= HOLD + 2500;
+        if (held || failsafe) { holdStart = null; endAt = null; setLock(false); }
+      }
       drive();
       return true;
     }
     // scrolled back to the top going up — re-lock and reverse the rotation
-    if (dy < 0 && scroller().scrollTop <= 0) { setLock(true); targetP = 0.999; drive(); return true; }
+    if (dy < 0 && scroller().scrollTop <= 0) { setLock(true); holdStart = null; endAt = null; targetP = 0.999; drive(); return true; }
     return false;
   }
 
