@@ -421,15 +421,17 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var state = {
-    buyers: ["mika.sol", "0xkenji", "ayaverse", "soltaro", "ryu_dgn"],
-    baseCount: 5,
+    /* Real reservations, newest first. Everything on the page — the count, the
+       fill bar, the proof line, the leaderboard and the sold-out state —
+       derives from this one array. */
+    buyers: ["shizudio", "gizmothegizzer"],
     modal: null,
     wallet: null,
     faqOpen: 0
   };
   var lastOrder = null;
 
-  var count = function () { return Math.min(15, state.baseCount + (state.buyers.length - 5)); };
+  var count = function () { return Math.min(15, state.buyers.length); };
 
   var $ = function (sel) { return document.querySelector(sel); };
   var esc = function (t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; };
@@ -459,6 +461,19 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   setInterval(tickClock, 1000);
 
   /* ---------- derived views ---------- */
+  /* Reads naturally at any length: one name, two, a short list, or a list plus a
+     remainder. The old form always appended "and N more", which said "and 0 more
+     reserved" as soon as every buyer fitted on screen. */
+  function proofLine(shown, more) {
+    if (!shown.length) return "No pieces reserved yet.";
+    var names = shown.map(function (h) { return "@" + h; });
+    var list;
+    if (more > 0) list = names.join(", ") + " and " + more + " more";
+    else if (names.length === 1) list = names[0];
+    else list = names.slice(0, -1).join(", ") + " and " + names[names.length - 1];
+    return list + " reserved";
+  }
+
   function renderReserve() {
     var c = count();
     $("#countNum").textContent = c;
@@ -476,7 +491,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       }));
     });
     var more = Math.max(0, c - shown.length);
-    $("#proofText").textContent = "@" + shown.join(", @") + " and " + more + " more reserved";
+    $("#proofText").textContent = proofLine(shown, more);
 
     var sold = c >= 15;
     $("#orderLive").hidden = sold;

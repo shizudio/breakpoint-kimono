@@ -29,9 +29,11 @@ Four things in `site/index.html` are still the prototype's simulation:
    Vercel route handler writing to a sheet, a Telegram bot message, or a form
    service are each an afternoon. Send `{ name, email, x, tg }` — the client already
    normalises pasted profile URLs to a bare handle.
-4. **The buyer list is mock data** (`state.buyers`). Count, fill bar, proof line,
-   leaderboard and the sold-out state all derive from it, so wiring one API
-   response into that array lights up the whole page.
+4. **The buyer list is hard-coded** (`state.buyers`) — currently the two real
+   reservations, newest first. Count, fill bar, proof line, leaderboard and the
+   sold-out state all derive from it, so wiring one API response into that array
+   lights up the whole page. It is the array, not a separate counter: adding a
+   handle is the only edit needed to record a reservation by hand.
 
 The 15-piece cap must be enforced server-side; the client bar is display only.
 
