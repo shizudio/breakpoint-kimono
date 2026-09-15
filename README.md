@@ -119,3 +119,25 @@ required; the handles are optional and feed the order card.
   you@example.com"), so a typo surfaces there rather than in silence.
 - Fields use real `<label>` elements at the system's 9.5px micro-label spec,
   rather than placeholder-as-label.
+
+## Turntable frames
+
+Re-extracted from `source/hf_*.mp4` at the source's full **1920×1080**; the
+handoff bundle had been downscaled to 1280×720, which the browser then upscaled
+1.3–1.7× on any Retina screen. That was the blur.
+
+    ffmpeg -i source/hf_*.mp4 -vf "fps=72/10.041667" \
+           -frames:v 72 -q:v 8 -start_number 0 site/frames3/f%02d.jpg
+
+`-q:v 8` lands the set at 3.2MB, within a rounding error of the old 1280 set, so
+the loader's preload budget is unchanged for 2.25× the pixels. Going finer (q6,
+q4) costs 0.5–1.2MB for well under 1dB — not worth it in front of a blocking
+loader.
+
+Anything that re-encodes these must keep 72 frames spanning exactly one 360°
+rotation. Consecutive-frame PSNR should average ~25dB with the f71→f00 wrap
+close behind at ~18dB; a spike means a dropped or duplicated frame.
+
+No WebP/AVIF here — this machine has no encoder for either. WebP would cut
+roughly a third off at equal quality and is worth doing in CI if the preload
+ever needs to get lighter.
