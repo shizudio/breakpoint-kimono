@@ -39,6 +39,10 @@ The 15-piece cap must be enforced server-side; the client bar is display only.
 
 ## Notes carried over from the design handoff
 
+- During that hold the CTA lights up (`.cta.is-live`, the same gradient, wave and
+  dual glow as its hover state), so the beat reads as "this is next" rather than
+  a frozen page. Every `holdStart` transition goes through `setHold()` so the
+  glow cannot drift out of sync with the hold it represents.
 - The hero holds on the finished garment before releasing the page. `HOLD` (ms)
   is the beat; `END` is the float-safe "rotation complete" test, because the
   wheel notches sum to 0.9999999999999999 rather than 1. Release also waits for
@@ -158,6 +162,21 @@ close behind at ~18dB; a spike means a dropped or duplicated frame.
 No WebP/AVIF here — this machine has no encoder for either. WebP would cut
 roughly a third off at equal quality and is worth doing in CI if the preload
 ever needs to get lighter.
+
+## Buyer avatars
+
+`site/web/avatar-<handle>.jpg`, 128×128 — self-hosted snapshots of the X profile
+pictures, fetched once via unavatar.io and re-encoded. Nothing on the page calls
+a third party at runtime.
+
+    curl -L "https://unavatar.io/x/<handle>" -o /tmp/a.jpg
+    ffmpeg -i /tmp/a.jpg -vf "scale=128:128:flags=lanczos" -q:v 3 \
+           site/web/avatar-<handle>.jpg
+
+Then add the handle to `AVATARS` in the script. Anyone missing from that map
+falls back to the initial on a tinted ground, which is the design's own
+treatment — so a new buyer never renders broken. These are snapshots: if someone
+changes their picture, theirs goes stale until it is re-fetched.
 
 ## Share card
 

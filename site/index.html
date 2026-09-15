@@ -82,10 +82,12 @@ img{display:block}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .9s cubic-bezier(.25,.46,.45,.94)}
 .proof{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
 .bubbles{display:flex}
+.bubble img,.lb .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
 .bubble{width:26px;height:26px;border-radius:50%;border:.5px solid rgba(247,244,238,.3);box-shadow:0 0 0 2px var(--ground);margin-left:-7px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--ed);font-size:11.5px;color:var(--ink);opacity:.9;flex:none}
 .proof-text{font-size:10.5px;line-height:1.5;opacity:.6;text-align:center}
 .cta{width:100%;margin-top:4px;font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;padding:clamp(14px,2.4vh,20px) 34px;border:1px solid var(--accent);cursor:pointer;background:var(--accent);background-size:220% 100%;color:var(--ink);transition:box-shadow .45s cubic-bezier(.25,.46,.45,.94)}
-.cta:hover{background-image:linear-gradient(110deg,#9945FF,#14F195,#9945FF);animation:sol-wave 3.2s linear infinite;box-shadow:0 0 34px -4px rgba(153,69,255,.8),0 0 68px -12px rgba(20,241,149,.55)}
+.cta:hover,.cta.is-live{background-image:linear-gradient(110deg,#9945FF,#14F195,#9945FF);animation:sol-wave 3.2s linear infinite;box-shadow:0 0 34px -4px rgba(153,69,255,.8),0 0 68px -12px rgba(20,241,149,.55)}
+@media (prefers-reduced-motion:reduce){.cta.is-live{animation:none}}
 
 /* ---- sections ---- */
 .two-col{margin:0 auto;padding:clamp(28px,3.4vw,48px) clamp(28px,4vw,40px) clamp(40px,5vw,68px);display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4vw,56px);align-items:start}
@@ -120,7 +122,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .lb a{display:grid;grid-template-columns:34px 30px 1fr auto;align-items:center;gap:16px;padding:14px 2px;border-bottom:.5px solid var(--hair);color:var(--ink);transition:opacity .2s}
 .lb a:hover{opacity:.6;color:var(--ink)}
 .lb .no{font-family:var(--ed);font-style:italic;font-size:17px;opacity:.5}
-.lb .av{width:26px;height:26px;border-radius:50%;border:.5px solid rgba(247,244,238,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ed);font-size:11.5px}
+.lb .av{width:26px;height:26px;border-radius:50%;border:.5px solid rgba(247,244,238,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ed);font-size:11.5px;overflow:hidden;flex:none}
 .lb .handle{font-size:13px;letter-spacing:.02em}
 .lb .state{font-size:9px;letter-spacing:.28em;text-transform:uppercase}
 
@@ -401,6 +403,19 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var PRESALE_ENDS = Date.UTC(2026, 8, 29, 12, 0, 0); // 2026-09-29 12:00 UTC
 
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
+  /* Self-hosted profile pictures. Anyone without one falls back to the initial on
+     a tinted ground, which is what the design specified. */
+  var AVATARS = {
+    shizudio: "web/avatar-shizudio.jpg",
+    gizmothegizzer: "web/avatar-gizmothegizzer.jpg"
+  };
+  function avatarInto(node, handle) {
+    var src = AVATARS[handle];
+    if (!src) return false;
+    node.textContent = "";
+    node.appendChild(el("img", { src: src, alt: "", loading: "lazy", width: "128", height: "128" }));
+    return true;
+  }
   var WALLETS = ["Phantom", "Solflare", "Backpack"];
   var FRAMES = 72;
   var SHARE_URL = "https://breakpoint-kimono.vercel.app/";
@@ -484,11 +499,13 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     var bubbles = $("#bubbles");
     bubbles.textContent = "";
     shown.forEach(function (b, i) {
-      bubbles.appendChild(el("div", {
+      var node = el("div", {
         class: "bubble",
         style: "background:" + TINTS[i % 4],
         text: b[0].toUpperCase()
-      }));
+      });
+      avatarInto(node, b);
+      bubbles.appendChild(node);
     });
     var more = Math.max(0, c - shown.length);
     $("#proofText").textContent = proofLine(shown, more);
@@ -511,11 +528,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         rel: "noopener"
       }, [
         el("span", { class: "no", text: pad(i + 1) }),
-        el("span", {
-          class: "av",
-          style: "background:" + (taken ? TINTS[i % 5] : "transparent"),
-          text: taken ? b[0].toUpperCase() : ""
-        }),
+        (function () {
+          var av = el("span", {
+            class: "av",
+            style: "background:" + (taken ? TINTS[i % 5] : "transparent"),
+            text: taken ? b[0].toUpperCase() : ""
+          });
+          if (taken) avatarInto(av, b);
+          return av;
+        })(),
         el("span", {
           class: "handle",
           style: "opacity:" + (taken ? ".85" : ".3"),
@@ -840,8 +861,16 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     try { history.scrollRestoration = "manual"; } catch (e) {}
   }
 
+  /* The rotation finishes and the page deliberately holds. Without a cue that beat
+     reads as a frozen page, so the CTA lights up: the hero is done, this is next. */
+  function setHold(t) {
+    holdStart = t;
+    var cta = $(".cta");
+    if (cta) cta.classList.toggle("is-live", t != null);
+  }
+
   function resetToHero() {
-    targetP = 0; curP = null; frame = 0; holdStart = null; endAt = null;
+    targetP = 0; curP = null; frame = 0; setHold(null); endAt = null;
     if (raf) { cancelAnimationFrame(raf); raf = null; }
     img.src = FRAMES_DIR + "f00.jpg";
     window.scrollTo(0, 0);
@@ -857,32 +886,32 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       if (i !== frame) { frame = i; img.src = FRAMES_DIR + "f" + pad(i) + ".jpg"; }
       // Begin the hold as soon as the rotation has visibly settled — not when the
       // user stops scrolling — so the beat elapses during their natural pause.
-      if (targetP >= END && curP > 0.995 && holdStart == null) holdStart = performance.now();
+      if (targetP >= END && curP > 0.995 && holdStart == null) setHold(performance.now());
       if (Math.abs(targetP - curP) > 0.002) raf = requestAnimationFrame(tick);
     });
   }
   function consume(dy) {
     if (locked) {
       targetP = Math.min(1, Math.max(0, targetP + dy / SPAN));
-      if (dy < 0) { holdStart = null; endAt = null; } // turning back cancels the hold
+      if (dy < 0) { setHold(null); endAt = null; } // turning back cancels the hold
       // The old release fired the instant targetP hit 1, while curP was still
       // easing — the page scrolled away mid-rotation. Wait for the frames to
       // settle, then hold a beat on the finished garment before letting go.
       if (targetP >= END && dy > 0) {
         var now = performance.now();
         if (endAt == null) endAt = now;
-        if (holdStart == null && curP != null && curP > 0.995) holdStart = now;
+        if (holdStart == null && curP != null && curP > 0.995) setHold(now);
         var held = holdStart != null && now - holdStart >= HOLD;
         // Never trap anyone in the hero if the frames cannot settle (a suspended
         // rAF in a background tab, a frame that will not decode).
         var failsafe = now - endAt >= HOLD + 2500;
-        if (held || failsafe) { holdStart = null; endAt = null; setLock(false); }
+        if (held || failsafe) { setHold(null); endAt = null; setLock(false); }
       }
       drive();
       return true;
     }
     // scrolled back to the top going up — re-lock and reverse the rotation
-    if (dy < 0 && scroller().scrollTop <= 0) { setLock(true); holdStart = null; endAt = null; targetP = 0.999; drive(); return true; }
+    if (dy < 0 && scroller().scrollTop <= 0) { setLock(true); setHold(null); endAt = null; targetP = 0.999; drive(); return true; }
     return false;
   }
 
@@ -893,7 +922,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     // If the rotation is done and the beat has passed, let go now — otherwise this
     // whole swipe gets consumed by the hero and the page only moves on the next one.
     if (locked && targetP >= END && holdStart != null && performance.now() - holdStart >= HOLD) {
-      holdStart = null; endAt = null; setLock(false);
+      setHold(null); endAt = null; setLock(false);
     }
   }
   function onTouchMove(e) {
