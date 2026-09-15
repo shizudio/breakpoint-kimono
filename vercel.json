@@ -7,7 +7,7 @@
   "cleanUrls": true,
   "headers": [
     {
-      "source": "/frames3/(.*)",
+      "source": "/frames-v2/(.*)",
       "headers": [
         {
           "key": "Cache-Control",

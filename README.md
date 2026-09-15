@@ -4,7 +4,7 @@ A single static page. `site/` is the deploy root; there is no build step.
 
     site/
       index.html      the whole page (markup, styles, behaviour)
-      frames3/        72-frame turntable sequence, f00–f71
+      frames-v2/      72-frame turntable sequence, f00–f71 (see note below)
       web/            photography + self-hosted portrait
       assets/logo.png 岩花 seal, recoloured white in the loader
 
@@ -66,6 +66,12 @@ scroll at any size; the hero's turntable never overlaps the reserve stack.
 What the touch rules change, all scoped to `(hover:none) and (pointer:coarse)`
 so the desktop design is untouched:
 
+- **The hold at the end of the rotation is shorter** (420ms against 900ms).
+  Release happens inside `consume()`, which only runs on input: a wheel streams
+  events so desktop lets go the moment the beat is up, but a swipe is one
+  discrete burst, so if the finger lifts first the entire next swipe is eaten by
+  the hero. `touchstart` now also releases once the beat has passed, so the
+  swipe that follows the hold scrolls the page instead of being consumed.
 - **Inputs go to 16px.** iOS Safari zooms the page when a focused input is under
   16px, which threw the user out of the hero. This is a deliberate deviation
   from the 14px in the design spec — it is a desktop number.
@@ -136,7 +142,7 @@ handoff bundle had been downscaled to 1280×720, which the browser then upscaled
 1.3–1.7× on any Retina screen. That was the blur.
 
     ffmpeg -i source/video_new.mp4 -vf "fps=72/10.041667" \
-           -frames:v 72 -q:v 8 -start_number 0 site/frames3/f%02d.jpg
+           -frames:v 72 -q:v 8 -start_number 0 site/frames-v2/f%02d.jpg
 
 `-q:v 8` lands the set at 3.2MB, within a rounding error of the old 1280 set, so
 the loader's preload budget is unchanged for 2.25× the pixels. Going finer (q6,
@@ -182,3 +188,15 @@ crops the artwork to a tall slice.
 The card is a fixed image, so every buyer posts the same one; the piece number
 lives in the tweet text instead. Per-buyer cards need a rendered
 `/o/<id>` route — see the note on `@vercel/og` above.
+
+## Cache-busting the turntable
+
+Frames are served `immutable, max-age=31536000`, so **a new turntable must land
+on a new path**. Swapping the files under an existing folder deploys fine and
+still leaves every returning visitor on the old render, out of their own disk
+cache, for up to a year — this already happened once going from the original
+master to `video_new.mp4`.
+
+To swap the video: extract into `site/frames-<next>/`, then update all three of
+`FRAMES_DIR` in the script, the hero `<img src>`, and the `headers` source in
+`vercel.json`. The script comment next to `FRAMES_DIR` says the same.
