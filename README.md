@@ -44,3 +44,31 @@ a line on the order card, and a line on the confirmation step — because the
 wallet flow takes no payment. Remove all three (search `preview-bar` and
 `preview-note`) when payments go live. The strip is hidden under 540px of
 viewport height so it never eats the turntable's height budget.
+
+## Mobile
+
+Verified at 375×812, 360×640, 667×375 (landscape) and 1280×800. No horizontal
+scroll at any size; the hero's turntable never overlaps the reserve stack.
+
+What the touch rules change, all scoped to `(hover:none) and (pointer:coarse)`
+so the desktop design is untouched:
+
+- **Inputs go to 16px.** iOS Safari zooms the page when a focused input is under
+  16px, which threw the user out of the hero. This is a deliberate deviation
+  from the 14px in the design spec — it is a desktop number.
+- **Tap targets.** "Order by form" and the modal's "Close" get a 44px hit area
+  from an `::after` box, so the label does not move. Leaderboard rows go to
+  61px, the X opt-in checkbox to 20px. The meta ledger links reach ~31px; a full
+  44px would make adjacent rows overlap, so they stop short deliberately.
+- **No hover pause on the marquee**, since a touch hover state can stick.
+
+Two layout rules are width-based rather than pointer-based:
+
+- Under 640px the materiality grid drops to one column.
+- On portrait phones the turntable scales to `min(190vw,900px)`. The frames are
+  16:9, which letterboxes the garment into a thin band on a portrait screen —
+  scaling up and letting the hero's `overflow:hidden` crop the empty sides
+  renders it ~1.9× larger. The radial mask already feathers the edges.
+
+The preview strip hides under 540px of viewport height so it never eats the
+turntable's height budget. Hero integrity holds from 900px down to 480px.

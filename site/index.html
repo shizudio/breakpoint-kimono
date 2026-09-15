@@ -28,7 +28,8 @@
 }
 *{box-sizing:border-box}
 html,body{margin:0;padding:0}
-body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-weight:300;-webkit-font-smoothing:antialiased}
+body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-weight:300;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+a,button{-webkit-tap-highlight-color:rgba(153,69,255,.25)}
 a{color:var(--link);text-decoration:none;transition:color .2s}
 a:hover{color:var(--accent2)}
 ::selection{background:var(--accent);color:var(--ink)}
@@ -68,7 +69,7 @@ img{display:block}
 .hero-mid h1{margin:0;font-family:var(--ed);font-weight:300;font-size:clamp(24px,3.8vw,49px);letter-spacing:.01em;text-align:center;line-height:1.02}
 /* the image is the only flex:1 child and must never get a min-height — it absorbs the shortfall of the fixed-height hero */
 #turntable{flex:1;min-height:0;width:min(100vw,1100px);object-fit:contain;margin-top:clamp(6px,1.4vh,14px);pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 74% 74% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 74% 74% at 50% 50%,#000 60%,transparent 100%)}
-.reserve{position:relative;z-index:3;padding:clamp(10px,2vh,18px) clamp(28px,4vw,40px) clamp(14px,2.6vh,24px);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.4vh,12px);max-width:420px;width:100%;margin:0 auto;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 40%,transparent)}
+.reserve{position:relative;z-index:3;padding:clamp(10px,2vh,18px) clamp(28px,4vw,40px) calc(clamp(14px,2.6vh,24px) + env(safe-area-inset-bottom));display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.4vh,12px);max-width:420px;width:100%;margin:0 auto;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 40%,transparent)}
 .count-row{display:flex;justify-content:center;align-items:baseline;gap:9px;width:100%;font-size:9px;letter-spacing:.28em;text-transform:uppercase}
 .count-row .n{font-family:var(--ed);font-size:20px;letter-spacing:0;font-style:italic}
 .bar{height:8px;width:100%;background:rgba(247,244,238,.14);overflow:hidden}
@@ -156,10 +157,39 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 /* On very short viewports give the hero its full height budget back — the
    turntable must never collapse. The order card and modal still disclose it. */
 @media (max-height:540px){ .preview-bar{display:none} }
+/* The turntable frames are 16:9. On a portrait phone that letterboxes the
+   garment into a thin band with dead space above and below, so scale the frame
+   up and let the hero's overflow:hidden crop the empty sides — the radial mask
+   already feathers them into the ground. */
+@media (max-width:640px) and (orientation:portrait){
+  #turntable{width:min(190vw,900px)}
+}
+
 @media (max-width:640px){
   .mat-grid{grid-template-columns:1fr}
   .order-head h2{font-size:34px}
 }
+/* Touch devices. The design's type sizes are a desktop spec; these rules grow
+   touch targets and stop iOS zooming on focus, without changing the layout. */
+@media (hover:none) and (pointer:coarse){
+  /* iOS Safari zooms the page when a focused input is under 16px. */
+  .field{font-size:16px;padding:14px 2px}
+  .optin input{flex:none;width:20px;height:20px}
+  /* "Order by form" and the modal's "Close" are real actions — give them a
+     44px tap area without moving the label. */
+  .link-btn,.btn-ghost{position:relative}
+  .link-btn::after,.btn-ghost::after{content:"";position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);width:calc(100% + 24px);height:44px}
+  /* Secondary ledger links: more room between rows, and a taller hit box. */
+  .meta-ledger{gap:18px}
+  .meta-ledger a{display:inline-block;padding:9px 0}
+  .ledger-row{align-items:center}
+  /* Leaderboard rows are the main list — make each comfortably tappable. */
+  .lb a{padding:17px 2px}
+  /* No hover state can be "stuck" on touch, so drop the marquee hover pause. */
+  .shot:hover{border-color:var(--hair)}
+}
+
 @media (prefers-reduced-motion:reduce){
   *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
