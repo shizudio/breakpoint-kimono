@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>The Breakpoint Kimono — Shizudio</title>
+<title>2026 Breakpoint Kimono — Shizudio</title>
 <meta name="description" content="A fifteen-piece run of the Breakpoint Kimono by Shizudio. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="assets/logo.png">
 <meta property="og:type" content="website">
-<meta property="og:title" content="The Breakpoint Kimono — Shizudio">
+<meta property="og:title" content="2026 Breakpoint Kimono — Shizudio">
 <meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
 <meta property="og:image" content="web/modeling.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -156,8 +156,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .panel h3{margin:0;font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1}
 .wallet-btn{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:300;letter-spacing:.06em;padding:16px 18px;border:.5px solid var(--hair-strong);background:transparent;color:var(--ink);cursor:pointer;transition:border-color .2s}
 .wallet-btn:hover{border-color:var(--accent)}
-.optin{display:flex;gap:12px;align-items:flex-start;font-size:11.5px;line-height:1.7;opacity:.72;cursor:pointer}
-.optin input{accent-color:var(--accent);margin-top:3px}
 .card-frame{border:.5px solid var(--hair)}
 .card-grad{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:26px;display:flex;flex-direction:column;gap:8px;color:#000000}
 .btn-invert{font-size:9.5px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;padding:17px;border:1px solid var(--ink);background:var(--ink);color:#000000;cursor:pointer;transition:background .2s,color .2s}
@@ -183,7 +181,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 @media (hover:none) and (pointer:coarse){
   /* iOS Safari zooms the page when a focused input is under 16px. */
   .field{font-size:16px;padding:14px 2px}
-  .optin input{flex:none;width:20px;height:20px}
   /* "Order by form" and the modal's "Close" are real actions — give them a
      44px tap area without moving the label. */
   .link-btn,.btn-ghost{position:relative}
@@ -225,8 +222,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       </div>
     </header>
     <div class="hero-mid">
-      <h1>The Breakpoint Kimono</h1>
-      <img id="turntable" src="frames3/f00.jpg" alt="The Breakpoint Kimono, full turntable view">
+      <h1>2026 Breakpoint Kimono</h1>
+      <img id="turntable" src="frames3/f00.jpg" alt="The 2026 Breakpoint Kimono, full turntable view">
     </div>
     <div class="reserve">
       <div class="count-row"><span class="n" id="countNum">5</span><span>of 15 reserved</span></div>
@@ -336,9 +333,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         <span style="font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.5"><span id="remaining">10</span> of 15 remaining · Ships Nov</span>
       </div>
       <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
-        <button class="btn-purple" data-open-wallet>Connect Solana wallet · pay USDC or USDT</button>
-        <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the wallet nor the form is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
-        <div class="fallback"><span>No wallet on hand?</span><button class="link-btn" id="toggleForm">Order by form</button></div>
+        <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
+        <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the form nor the wallet is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
+      </div>
+      <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
+    </div>
+  </div>
+</section>
+
+<div id="formHolder" hidden>
         <form class="form" id="orderForm" hidden novalidate>
           <div class="field-row" data-field="name">
             <label class="field-label" for="fName">Name</label>
@@ -361,14 +364,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
             <p class="field-err" id="errTg" hidden></p>
           </div>
           <p class="field-hint">X and Telegram are optional — we use them for your order card and to reach you faster.</p>
-          <button class="btn-outline" type="submit">Submit order request</button>
-          <p class="footnote">We confirm each piece by hand and send payment details by email. Nothing else goes to this address.</p>
+          <button class="btn-outline" type="submit">Continue to payment</button>
+          <p class="footnote">We only use these to confirm your piece and to reach you about this order.</p>
         </form>
-      </div>
-      <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
-    </div>
-  </div>
-</section>
+</div>
 
 <div id="modal" hidden>
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
@@ -396,8 +395,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     baseCount: 5,
     modal: null,
     wallet: null,
-    twitterOptIn: true,
-    myHandle: "",
     faqOpen: 0
   };
   var lastOrder = null;
@@ -584,7 +581,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   function finish() {
-    var handle = (state.myHandle || "").replace(/^@/, "") || "anon";
+    var handle = (lastOrder && lastOrder.x) || "anon";
     state.buyers = [handle].concat(state.buyers);
     renderReserve();
     renderLeaderboard();
@@ -596,8 +593,16 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     modal.hidden = false;
     panel.textContent = "";
 
-    if (state.modal === "wallet") {
+    if (state.modal === "details") {
       panel.appendChild(eyebrow("Step one"));
+      panel.appendChild(title("Your details"));
+      // The form lives in #formHolder and is adopted by the panel, so its
+      // validation wiring survives every re-render.
+      orderForm.hidden = false;
+      panel.appendChild(orderForm);
+
+    } else if (state.modal === "wallet") {
+      panel.appendChild(eyebrow("Step two"));
       panel.appendChild(title("Connect a wallet"));
       WALLETS.forEach(function (w) {
         var b = el("button", { class: "wallet-btn", type: "button" }, [
@@ -607,9 +612,13 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         b.addEventListener("click", function () { state.wallet = w; setModal("pay"); });
         panel.appendChild(b);
       });
+      // The handoff requires a path for buyers who cannot use a wallet.
+      var noWallet = el("button", { class: "btn-ghost", type: "button", text: "I cannot use a wallet" });
+      noWallet.addEventListener("click", function () { setModal("formdone"); });
+      panel.appendChild(noWallet);
 
     } else if (state.modal === "pay") {
-      panel.appendChild(eyebrow("Step two"));
+      panel.appendChild(eyebrow("Step three"));
       panel.appendChild(title("Pay 300"));
       panel.appendChild(el("div", { style: "font-size:11.5px;opacity:.5", text: state.wallet + " · 7xKp…3rQm" }));
       var pays = el("div", { style: "display:flex;gap:12px" });
@@ -619,33 +628,22 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         pays.appendChild(b);
       });
       panel.appendChild(pays);
-
-      var cb = el("input", { type: "checkbox" });
-      cb.checked = state.twitterOptIn;
-      var label = el("label", { class: "optin" }, [cb]);
-      label.appendChild(document.createTextNode("Connect X, so your order card is ready to post once payment settles."));
-      panel.appendChild(label);
-
-      var handleInput = el("input", { class: "field", placeholder: "@yourhandle" });
-      handleInput.value = state.myHandle;
-      handleInput.hidden = !state.twitterOptIn;
-      handleInput.addEventListener("input", function (e) { state.myHandle = e.target.value; });
-      cb.addEventListener("change", function () {
-        state.twitterOptIn = cb.checked;
-        handleInput.hidden = !state.twitterOptIn;
-      });
-      panel.appendChild(handleInput);
+      // The X handle already came from step one — no need to ask twice.
+      if (lastOrder && lastOrder.x) {
+        panel.appendChild(el("p", {
+          class: "footnote",
+          text: "Your order card will be made out to @" + lastOrder.x + "."
+        }));
+      }
 
     } else if (state.modal === "done") {
-      var shownHandle = state.myHandle
-        ? (state.myHandle[0] === "@" ? state.myHandle : "@" + state.myHandle)
-        : "@you";
+      var shownHandle = lastOrder && lastOrder.x ? "@" + lastOrder.x : "@you";
       panel.appendChild(eyebrow("Reserved"));
       panel.appendChild(title("Your piece is held."));
       panel.appendChild(el("div", { class: "card-frame" }, [
         el("div", { class: "card-grad" }, [
           el("div", { style: "font-size:9px;letter-spacing:.34em;text-transform:uppercase", text: "Shizudio · Breakpoint 2026" }),
-          el("div", { style: "font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1", text: "The Breakpoint Kimono" }),
+          el("div", { style: "font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1", text: "2026 Breakpoint Kimono" }),
           el("div", { style: "font-size:11px;letter-spacing:.06em", text: shownHandle + " · piece " + count() + " of 15" })
         ]),
         el("div", { style: "padding:14px 18px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4", text: "Your order card" })
@@ -680,14 +678,9 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
-    b.addEventListener("click", function () { setModal("wallet"); });
+    b.addEventListener("click", function () { setModal("details"); });
   });
 
-  $("#toggleForm").addEventListener("click", function () {
-    var f = $("#orderForm");
-    f.hidden = !f.hidden;
-    if (!f.hidden) f.querySelector("input").focus();
-  });
   /* ---------- order form ---------- */
   /* People paste whole profile URLs as often as they type a handle. Take both. */
   function normHandle(v) {
@@ -769,7 +762,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     /* No backend yet. The order is not recorded anywhere — see README. When the
        reservation API lands, POST { name, x, tg } here and only then advance. */
     lastOrder = v;
-    setModal("formdone");
+    setModal("wallet");
   });
 
   /* ---------- turntable: scroll lock + scrub ---------- */

@@ -86,6 +86,20 @@ Two layout rules are width-based rather than pointer-based:
 The preview strip hides under 540px of viewport height so it never eats the
 turntable's height budget. Hero integrity holds from 900px down to 480px.
 
+## Purchase flow
+
+Both CTAs open one modal, in order:
+
+1. **Your details** — the form (name, email, X, Telegram). Validation blocks here.
+2. **Connect a wallet** — Phantom · Solflare · Backpack, plus an "I cannot use a
+   wallet" escape that ends at the confirmation with payment details by email.
+3. **Pay 300** — USDC or USDT.
+4. **Reserved** — the order card, made out to the X handle from step one.
+
+The details step adopts the `<form>` out of `#formHolder` rather than rebuilding
+it, so its validation wiring survives every re-render of the panel. The pay step
+no longer asks for an X handle — step one already has it.
+
 ## Order form
 
 Collects **name**, **email**, **X account** and **Telegram**. Name and email are
