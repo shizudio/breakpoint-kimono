@@ -36,3 +36,11 @@ The 15-piece cap must be enforced server-side; the client bar is display only.
 - The marquee's loop period is `children[6].offsetLeft`, not `scrollWidth/2`:
   12 children carry 11 gaps, so half the track is half a gap short.
 - `prefers-reduced-motion` skips the scroll lock, the loader and the marquee.
+
+## Preview notice
+
+The page currently carries three preview notices — a strip above the countdown,
+a line on the order card, and a line on the confirmation step — because the
+wallet flow takes no payment. Remove all three (search `preview-bar` and
+`preview-note`) when payments go live. The strip is hidden under 540px of
+viewport height so it never eats the turntable's height budget.
