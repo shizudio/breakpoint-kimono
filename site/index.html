@@ -138,6 +138,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .field{background:transparent;border:none;border-bottom:.5px solid var(--hair-strong);padding:12px 2px;color:var(--ink);font-family:var(--ui);font-weight:300;font-size:14px;outline:none}
 .field:focus{border-bottom-color:var(--accent)}
 .footnote{margin:0;font-size:11.5px;line-height:1.7;opacity:.5}
+.field-row{display:flex;flex-direction:column;gap:7px}
+.field-label{font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.4}
+.field-at{display:flex;align-items:baseline;gap:6px;border-bottom:.5px solid var(--hair-strong);transition:border-color .2s}
+.field-at:focus-within{border-bottom-color:var(--accent)}
+.field-at span{font-size:14px;opacity:.4;flex:none}
+.field-at .field{border-bottom:none;flex:1;min-width:0;padding-left:0}
+.field-row.invalid .field-at,.field-row.invalid>.field{border-bottom-color:var(--accent)}
+.field-err{margin:0;font-size:11.5px;line-height:1.6;opacity:.72}
+.field-hint{margin:2px 0 0;font-size:11.5px;line-height:1.7;opacity:.4}
 .soldout{margin:0;font-family:var(--ed);font-size:24px;font-style:italic;text-align:center;opacity:.72}
 
 /* modal */
@@ -328,14 +337,27 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       </div>
       <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
         <button class="btn-purple" data-open-wallet>Connect Solana wallet · pay USDC or USDT</button>
-        <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — the wallet path does not take payment yet. The form below reaches us.</p>
+        <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the wallet nor the form is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
         <div class="fallback"><span>No wallet on hand?</span><button class="link-btn" id="toggleForm">Order by form</button></div>
-        <form class="form" id="orderForm" hidden>
-          <input class="field" name="name" placeholder="Name" autocomplete="name" required>
-          <input class="field" name="email" type="email" placeholder="Email" autocomplete="email" required>
-          <input class="field" name="handle" placeholder="X handle (optional)">
+        <form class="form" id="orderForm" hidden novalidate>
+          <div class="field-row" data-field="name">
+            <label class="field-label" for="fName">Name</label>
+            <input class="field" id="fName" name="name" autocomplete="name" placeholder="Your name" aria-describedby="errName">
+            <p class="field-err" id="errName" hidden></p>
+          </div>
+          <div class="field-row" data-field="x">
+            <label class="field-label" for="fX">X account</label>
+            <div class="field-at"><span aria-hidden="true">@</span><input class="field" id="fX" name="x" placeholder="yourhandle" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="errX"></div>
+            <p class="field-err" id="errX" hidden></p>
+          </div>
+          <div class="field-row" data-field="tg">
+            <label class="field-label" for="fTg">Telegram</label>
+            <div class="field-at"><span aria-hidden="true">@</span><input class="field" id="fTg" name="tg" placeholder="yourhandle" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" aria-describedby="errTg"></div>
+            <p class="field-err" id="errTg" hidden></p>
+          </div>
+          <p class="field-hint">Leave at least one of X or Telegram — it is how we reach you with payment details.</p>
           <button class="btn-outline" type="submit">Submit order request</button>
-          <p class="footnote">We confirm each piece by hand and send payment details by email. Unsubscribe any time.</p>
+          <p class="footnote">We confirm each piece by hand and send payment details to the account you leave above.</p>
         </form>
       </div>
       <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
@@ -373,10 +395,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     myHandle: "",
     faqOpen: 0
   };
+  var lastOrder = null;
 
   var count = function () { return Math.min(15, state.baseCount + (state.buyers.length - 5)); };
 
   var $ = function (sel) { return document.querySelector(sel); };
+  var esc = function (t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; };
   var el = function (tag, attrs, kids) {
     var n = document.createElement(tag);
     for (var k in attrs) {
@@ -635,9 +659,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     } else if (state.modal === "formdone") {
       panel.appendChild(eyebrow("Received"));
       panel.appendChild(title("Request received."));
+      // Name the account back to them, so a typo is caught here rather than in silence.
+      var reach = lastOrder
+        ? (lastOrder.x ? "@" + lastOrder.x + " on X" : "@" + lastOrder.tg + " on Telegram")
+        : "the account you left";
       panel.appendChild(el("p", {
         style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
-        html: 'We confirm your piece and send payment details by email within a day. Questions → <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
+        html: 'We confirm your piece and send payment details to ' +
+              '<span style="opacity:1">' + esc(reach) + '</span>, within a day. Questions → ' +
+              '<a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
       }));
       panel.appendChild(ghostClose());
     }
@@ -655,8 +685,88 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     f.hidden = !f.hidden;
     if (!f.hidden) f.querySelector("input").focus();
   });
-  $("#orderForm").addEventListener("submit", function (e) {
+  /* ---------- order form ---------- */
+  /* People paste whole profile URLs as often as they type a handle. Take both. */
+  function normHandle(v) {
+    return String(v || "").trim()
+      .replace(/^https?:\/\//i, "")
+      .replace(/^(www\.)?(x\.com|twitter\.com|t\.me|telegram\.me)\//i, "")
+      .replace(/[?#].*$/, "")
+      .replace(/^@+/, "")
+      .replace(/\/+$/, "")
+      .trim();
+  }
+
+  var orderForm = $("#orderForm");
+  function fieldRow(name) { return orderForm.querySelector('[data-field="' + name + '"]'); }
+  /* msg " " marks the row as part of a shared error (the X/Telegram pair) —
+     the underline turns, but only one of the two carries the sentence. */
+  function setError(name, msg) {
+    var row = fieldRow(name), out = row.querySelector(".field-err"), input = row.querySelector("input");
+    var marked = !!msg, hasText = marked && msg.trim() !== "";
+    row.classList.toggle("invalid", marked);
+    out.hidden = !hasText;
+    out.textContent = hasText ? msg : "";
+    if (marked) input.setAttribute("aria-invalid", "true");
+    else input.removeAttribute("aria-invalid");
+  }
+
+  function readForm() {
+    return {
+      name: $("#fName").value.trim(),
+      x: normHandle($("#fX").value),
+      tg: normHandle($("#fTg").value)
+    };
+  }
+
+  function validate(v) {
+    var errs = {};
+    if (!v.name) errs.name = "We need a name for the piece.";
+    // X allows 1–15 of [A-Za-z0-9_]; Telegram 5–32.
+    if (v.x && !/^[A-Za-z0-9_]{1,15}$/.test(v.x)) errs.x = "That does not look like an X handle.";
+    if (v.tg && !/^[A-Za-z0-9_]{5,32}$/.test(v.tg)) errs.tg = "Telegram handles are 5–32 letters, digits or underscores.";
+    // Without an email there is no other way back to the buyer.
+    if (!v.x && !v.tg) {
+      var m = "Leave an X or a Telegram handle so we can reach you.";
+      errs.x = m; errs.tg = " ";
+    }
+    return errs;
+  }
+
+  ["fName", "fX", "fTg"].forEach(function (id) {
+    var input = $("#" + id);
+    // Re-validate only once a field has been marked, so we never scold mid-typing.
+    input.addEventListener("input", function () {
+      var row = input.closest(".field-row");
+      if (row.classList.contains("invalid")) showErrors(validate(readForm()));
+    });
+    // Normalise a pasted URL when the field loses focus.
+    if (id !== "fName") input.addEventListener("blur", function () {
+      var n = normHandle(input.value);
+      if (n !== input.value) input.value = n;
+    });
+  });
+
+  function showErrors(errs) {
+    ["name", "x", "tg"].forEach(function (k) { setError(k, errs[k] || ""); });
+  }
+
+  orderForm.addEventListener("submit", function (e) {
     e.preventDefault();
+    var v = readForm();
+    var errs = validate(v);
+    if (Object.keys(errs).length) {
+      showErrors(errs);
+      var first = orderForm.querySelector(".field-row.invalid input");
+      if (first) first.focus();
+      return;
+    }
+    showErrors({});
+    $("#fX").value = v.x;
+    $("#fTg").value = v.tg;
+    /* No backend yet. The order is not recorded anywhere — see README. When the
+       reservation API lands, POST { name, x, tg } here and only then advance. */
+    lastOrder = v;
     setModal("formdone");
   });
 

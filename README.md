@@ -78,3 +78,21 @@ Two layout rules are width-based rather than pointer-based:
 
 The preview strip hides under 540px of viewport height so it never eats the
 turntable's height budget. Hero integrity holds from 900px down to 480px.
+
+## Order form
+
+Collects **name**, **X account** and **Telegram** — no email. Name is required,
+plus at least one of the two handles, because without an email a handle is the
+only route back to the buyer.
+
+- Pasted profile URLs are normalised to a bare handle on blur:
+  `https://x.com/foo?s=21`, `x.com/foo`, `@foo` and `t.me/foo/` all become `foo`.
+- Handle shapes are checked against the real limits — X is 1–15 of
+  `[A-Za-z0-9_]`, Telegram 5–32.
+- Errors appear per field, and only after a field has been marked once, so
+  nobody is scolded mid-typing. The errored underline turns `#9945FF`; the
+  palette has no red and the system forbids inventing one.
+- The confirmation names the account back ("…send payment details to @foo on
+  X"), so a typo surfaces there rather than in silence.
+- Fields use real `<label>` elements at the system's 9.5px micro-label spec,
+  rather than placeholder-as-label.
