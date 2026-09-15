@@ -122,7 +122,7 @@ required; the handles are optional and feed the order card.
 
 ## Turntable frames
 
-Re-extracted from `source/hf_*.mp4` at the source's full **1920×1080**; the
+Re-extracted from `source/video_new.mp4` at the source's full **1920×1080**; the
 handoff bundle had been downscaled to 1280×720, which the browser then upscaled
 1.3–1.7× on any Retina screen. That was the blur.
 
