@@ -126,7 +126,7 @@ Re-extracted from `source/video_new.mp4` at the source's full **1920×1080**; th
 handoff bundle had been downscaled to 1280×720, which the browser then upscaled
 1.3–1.7× on any Retina screen. That was the blur.
 
-    ffmpeg -i source/hf_*.mp4 -vf "fps=72/10.041667" \
+    ffmpeg -i source/video_new.mp4 -vf "fps=72/10.041667" \
            -frames:v 72 -q:v 8 -start_number 0 site/frames3/f%02d.jpg
 
 `-q:v 8` lands the set at 3.2MB, within a rounding error of the old 1280 set, so
