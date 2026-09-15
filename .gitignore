@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+.vercel
+
+# Client originals and the design handoff bundle — kept on disk, not in the
+# deploy repo. site/ already carries the web-optimised derivatives.
+source/

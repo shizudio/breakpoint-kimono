@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>The Breakpoint Kimono — Shizudio</title>
+<meta name="description" content="A fifteen-piece run of the Breakpoint Kimono by Shizudio. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
+<meta name="theme-color" content="#000000">
+<link rel="icon" href="assets/logo.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Breakpoint Kimono — Shizudio">
+<meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
+<meta property="og:image" content="web/modeling.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:site" content="@shizudio">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=DM+Sans:wght@300;700&family=Noto+Serif+SC:wght@300&display=swap">
+
+<style>
+:root{
+  --ground:#000000; --ground-alt:#0E0E0E; --ink:#F7F4EE;
+  --hair:rgba(247,244,238,.12); --hair-strong:rgba(247,244,238,.24);
+  --accent:#9945FF; --accent2:#14F195; --link:#9B89A3;
+  --ed:'Cormorant Garamond',Georgia,serif;
+  --ui:'DM Sans',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-weight:300;-webkit-font-smoothing:antialiased}
+a{color:var(--link);text-decoration:none;transition:color .2s}
+a:hover{color:var(--accent2)}
+::selection{background:var(--accent);color:var(--ink)}
+input::placeholder{color:rgba(247,244,238,.4)}
+button{font:inherit;border-radius:0}
+img{display:block}
+:focus-visible{outline:1px solid var(--accent2);outline-offset:3px}
+
+@keyframes sol-wave{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+
+.eyebrow{font-family:var(--ui);font-weight:300;font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);margin:0}
+.section{border-top:.5px solid var(--hair)}
+.h2{margin:22px 0 28px;font-family:var(--ed);font-weight:300;line-height:1.14}
+.body{font-size:15px;line-height:1.88;max-width:46ch;opacity:.72;margin:0 0 18px}
+
+/* ---- loader ---- */
+#loader{position:fixed;inset:0;z-index:100;background:var(--ground);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:34px;transition:opacity .4s ease}
+#loader.gone{opacity:0;pointer-events:none}
+.seal{position:relative;width:104px;height:104px}
+.seal img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;filter:brightness(0) invert(1)}
+.seal .base{opacity:.18}
+.seal .clip{position:absolute;left:0;right:0;bottom:0;overflow:hidden;height:0;transition:height .3s linear}
+.seal .clip img{position:absolute;left:0;bottom:0;width:104px;height:104px;inset:auto auto 0 0}
+.loader-label{font-size:9px;letter-spacing:.34em;text-transform:uppercase;opacity:.5;text-align:center;line-height:2.4}
+.loader-pct{font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4}
+
+/* ---- hero ---- */
+#hero{height:100vh;height:100svh;position:relative}
+.hero-inner{height:100vh;height:100svh;display:flex;flex-direction:column;overflow:hidden;background:var(--ground)}
+.hero-top{position:relative;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(4px,1vh,10px);padding:clamp(14px,2.6vh,28px) clamp(28px,4vw,40px);border-bottom:.5px solid var(--hair);font-size:clamp(9px,1.1vw,11px);letter-spacing:.28em;text-transform:uppercase}
+.hero-top .stack{display:flex;flex-direction:column;align-items:center;gap:10px}
+#countdown{color:var(--accent2);font-size:clamp(17px,2.2vw,26px);font-weight:400;letter-spacing:.14em}
+.hero-mid{position:relative;z-index:3;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:clamp(10px,2.4vh,32px) 0 0;min-height:0;pointer-events:none}
+.hero-mid h1{margin:0;font-family:var(--ed);font-weight:300;font-size:clamp(24px,3.8vw,49px);letter-spacing:.01em;text-align:center;line-height:1.02}
+/* the image is the only flex:1 child and must never get a min-height — it absorbs the shortfall of the fixed-height hero */
+#turntable{flex:1;min-height:0;width:min(100vw,1100px);object-fit:contain;margin-top:clamp(6px,1.4vh,14px);pointer-events:none;-webkit-mask-image:radial-gradient(ellipse 74% 74% at 50% 50%,#000 60%,transparent 100%);mask-image:radial-gradient(ellipse 74% 74% at 50% 50%,#000 60%,transparent 100%)}
+.reserve{position:relative;z-index:3;padding:clamp(10px,2vh,18px) clamp(28px,4vw,40px) clamp(14px,2.6vh,24px);display:flex;flex-direction:column;align-items:center;gap:clamp(8px,1.4vh,12px);max-width:420px;width:100%;margin:0 auto;text-align:center;background:linear-gradient(to top,rgba(0,0,0,.95) 40%,transparent)}
+.count-row{display:flex;justify-content:center;align-items:baseline;gap:9px;width:100%;font-size:9px;letter-spacing:.28em;text-transform:uppercase}
+.count-row .n{font-family:var(--ed);font-size:20px;letter-spacing:0;font-style:italic}
+.bar{height:8px;width:100%;background:rgba(247,244,238,.14);overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .9s cubic-bezier(.25,.46,.45,.94)}
+.proof{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.bubbles{display:flex}
+.bubble{width:26px;height:26px;border-radius:50%;border:.5px solid rgba(247,244,238,.3);box-shadow:0 0 0 2px var(--ground);margin-left:-7px;overflow:hidden;display:flex;align-items:center;justify-content:center;font-family:var(--ed);font-size:11.5px;color:var(--ink);opacity:.9;flex:none}
+.proof-text{font-size:10.5px;line-height:1.5;opacity:.6;text-align:center}
+.cta{width:100%;margin-top:4px;font-size:12px;font-weight:700;letter-spacing:.22em;text-transform:uppercase;padding:clamp(14px,2.4vh,20px) 34px;border:1px solid var(--accent);cursor:pointer;background:var(--accent);background-size:220% 100%;color:var(--ink);transition:box-shadow .45s cubic-bezier(.25,.46,.45,.94)}
+.cta:hover{background-image:linear-gradient(110deg,#9945FF,#14F195,#9945FF);animation:sol-wave 3.2s linear infinite;box-shadow:0 0 34px -4px rgba(153,69,255,.8),0 0 68px -12px rgba(20,241,149,.55)}
+
+/* ---- sections ---- */
+.two-col{margin:0 auto;padding:clamp(28px,3.4vw,48px) clamp(28px,4vw,40px) clamp(40px,5vw,68px);display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:clamp(28px,4vw,56px);align-items:start}
+figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4}
+
+/* marquee */
+#tweetWrap{margin-top:20px;overflow:hidden}
+#tweetTrack{display:flex;gap:14px;width:max-content;will-change:transform}
+.shot{flex:0 0 clamp(132px,14vw,170px);border:.5px solid var(--hair);color:var(--ink);transition:border-color .2s}
+.shot:hover{border-color:rgba(247,244,238,.4);color:var(--ink)}
+.shot img{width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--ground-alt)}
+.shot .meta{padding:12px;border-top:.5px solid var(--hair);display:flex;justify-content:space-between;align-items:baseline;gap:10px;font-size:9.5px}
+
+/* materiality */
+.mat-grid{margin-top:44px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(24px,3vw,48px)}
+.mat{display:flex;flex-direction:column;gap:18px}
+.mat img{width:100%;aspect-ratio:1/1;object-fit:cover;background:var(--ground-alt);border:.5px solid var(--hair)}
+.mat h3{margin:0;font-family:var(--ed);font-weight:300;font-size:26px;line-height:1.2}
+.mat p{margin:0;font-size:14.5px;line-height:1.9;max-width:44ch;opacity:.72}
+
+/* ledger */
+.ledger-row{display:flex;gap:16px;align-items:baseline}
+.ledger-row>span:first-child{width:96px;opacity:.4;flex:none}
+.meta-ledger{display:flex;flex-direction:column;gap:10px;border-top:.5px solid var(--hair);padding-top:22px;font-size:9.5px;letter-spacing:.26em;text-transform:uppercase}
+
+/* leaderboard */
+.lb{border-top:.5px solid var(--hair)}
+.lb a{display:grid;grid-template-columns:34px 30px 1fr auto;align-items:center;gap:16px;padding:14px 2px;border-bottom:.5px solid var(--hair);color:var(--ink);transition:opacity .2s}
+.lb a:hover{opacity:.6;color:var(--ink)}
+.lb .no{font-family:var(--ed);font-style:italic;font-size:17px;opacity:.5}
+.lb .av{width:26px;height:26px;border-radius:50%;border:.5px solid rgba(247,244,238,.3);display:flex;align-items:center;justify-content:center;font-family:var(--ed);font-size:11.5px}
+.lb .handle{font-size:13px;letter-spacing:.02em}
+.lb .state{font-size:9px;letter-spacing:.28em;text-transform:uppercase}
+
+/* faq */
+.faq{margin-top:32px;border-top:.5px solid var(--hair)}
+.faq-item{border-bottom:.5px solid var(--hair)}
+.faq-q{width:100%;display:flex;justify-content:space-between;align-items:baseline;gap:20px;text-align:left;background:none;border:none;padding:22px 2px;cursor:pointer;color:var(--ink);font-family:var(--ed);font-weight:300;font-size:21px;line-height:1.3;transition:opacity .2s}
+.faq-q:hover{opacity:.65}
+.faq-q .sign{font-family:var(--ui);font-size:14px;opacity:.5;flex:none}
+.faq-a{margin:0;padding:0 2px 26px;font-size:14.5px;line-height:1.9;max-width:46ch;opacity:.72}
+
+/* order card */
+.order-card{margin-top:28px;border:.5px solid var(--hair);padding:clamp(26px,4vw,40px);display:flex;flex-direction:column;gap:26px;background:var(--ground)}
+.order-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;border-bottom:.5px solid var(--hair);padding-bottom:22px}
+.order-head h2{margin:0;font-family:var(--ed);font-weight:300;font-size:42px;line-height:1}
+.order-head h2 span{font-size:19px;font-style:italic;opacity:.5}
+.btn-purple{width:100%;font-size:9.5px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;padding:18px 34px;border:1px solid var(--accent);cursor:pointer;background:var(--accent);color:var(--ink);transition:background .2s}
+.btn-purple:hover{background:transparent}
+.btn-outline{font-size:9.5px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;padding:16px;border:1px solid rgba(247,244,238,.5);background:none;color:var(--ink);cursor:pointer;transition:background .2s}
+.btn-outline:hover{background:rgba(247,244,238,.1)}
+.btn-ghost{background:none;border:none;padding:0;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);opacity:.38;cursor:pointer;text-decoration:underline}
+.fallback{display:flex;align-items:baseline;gap:8px;justify-content:center;font-size:11.5px;opacity:.5}
+.link-btn{background:none;border:none;padding:0;cursor:pointer;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--link);border-bottom:.5px solid rgba(155,137,163,.6)}
+.form{display:flex;flex-direction:column;gap:14px;border-top:.5px solid var(--hair);padding-top:26px}
+.field{background:transparent;border:none;border-bottom:.5px solid var(--hair-strong);padding:12px 2px;color:var(--ink);font-family:var(--ui);font-weight:300;font-size:14px;outline:none}
+.field:focus{border-bottom-color:var(--accent)}
+.footnote{margin:0;font-size:11.5px;line-height:1.7;opacity:.5}
+.soldout{margin:0;font-family:var(--ed);font-size:24px;font-style:italic;text-align:center;opacity:.72}
+
+/* modal */
+#modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
+#modal[hidden]{display:none}
+.panel{width:min(440px,100%);background:var(--ground);border:.5px solid var(--hair);box-shadow:0 40px 100px -30px rgba(0,0,0,.8);padding:clamp(24px,4vw,34px);display:flex;flex-direction:column;gap:20px;max-height:90vh;overflow:auto}
+.panel h3{margin:0;font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1}
+.wallet-btn{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:300;letter-spacing:.06em;padding:16px 18px;border:.5px solid var(--hair-strong);background:transparent;color:var(--ink);cursor:pointer;transition:border-color .2s}
+.wallet-btn:hover{border-color:var(--accent)}
+.optin{display:flex;gap:12px;align-items:flex-start;font-size:11.5px;line-height:1.7;opacity:.72;cursor:pointer}
+.optin input{accent-color:var(--accent);margin-top:3px}
+.card-frame{border:.5px solid var(--hair)}
+.card-grad{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:26px;display:flex;flex-direction:column;gap:8px;color:#000000}
+.btn-invert{font-size:9.5px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;padding:17px;border:1px solid var(--ink);background:var(--ink);color:#000000;cursor:pointer;transition:background .2s,color .2s}
+.btn-invert:hover{background:transparent;color:var(--ink)}
+
+@media (max-width:640px){
+  .mat-grid{grid-template-columns:1fr}
+  .order-head h2{font-size:34px}
+}
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+</head>
+<body>
+
+<div id="loader">
+  <div class="seal">
+    <img class="base" src="assets/logo.png" alt="岩花" lang="zh-Hans">
+    <div class="clip" id="sealClip"><img src="assets/logo.png" alt=""></div>
+  </div>
+  <div class="loader-label">Shizudio<br>Breakpoint 2026</div>
+  <div class="loader-pct" id="loadPct">000 / 100</div>
+</div>
+
+<div id="hero">
+  <div class="hero-inner">
+    <header class="hero-top">
+      <div class="stack">
+        <span style="opacity:.5">Presale closes in</span>
+        <span id="countdown">—</span>
+      </div>
+    </header>
+    <div class="hero-mid">
+      <h1>The Breakpoint Kimono</h1>
+      <img id="turntable" src="frames3/f00.jpg" alt="The Breakpoint Kimono, full turntable view">
+    </div>
+    <div class="reserve">
+      <div class="count-row"><span class="n" id="countNum">5</span><span>of 15 reserved</span></div>
+      <div class="bar"><i id="fill"></i></div>
+      <div class="proof">
+        <div class="bubbles" id="bubbles"></div>
+        <span class="proof-text" id="proofText"></span>
+      </div>
+      <button class="cta" data-open-wallet>Reserve yours at $300</button>
+    </div>
+  </div>
+</div>
+
+<section class="section">
+  <div class="two-col" style="max-width:1080px">
+    <div>
+      <p class="eyebrow">001 — Why we made it</p>
+      <h2 class="h2" style="font-size:clamp(28px,4vw,46px);max-width:22ch">Bringing the Kimono back, built to last.</h2>
+      <p class="body">Everyone loved the <a href="https://x.com/sunnymaanz/status/1938747199925690773" target="_blank" rel="noopener">Perena kimono</a> we made, so <a href="https://x.com/gizmothegizzer" target="_blank" rel="noopener">@gizmothegizzer</a> and I wanted to bring it back — but this time as something built to last.</p>
+      <p class="body">We are reworking it around durable materials, everyday functionality, and a timeless, genderless silhouette.</p>
+      <p class="body" style="margin:0">It is not really DeFi merch this time. More an experiment in turning our taste and belief into a piece of apparel <em>you would wear for days and years ahead.</em></p>
+    </div>
+    <figure style="margin:0;align-self:start">
+      <img loading="lazy" src="web/modeling.jpg" alt="Two models wearing the kimono, front and back" style="width:100%;height:auto;background:var(--ground-alt)">
+      <figcaption>Front and back · genderless cut</figcaption>
+    </figure>
+  </div>
+</section>
+
+<section class="section">
+  <div style="max-width:1280px;margin:0 auto;padding:clamp(24px,3vw,40px) clamp(28px,4vw,40px) clamp(36px,4.6vw,64px)">
+    <p class="eyebrow">Kimono 2025 captured</p>
+    <div id="tweetWrap"><div id="tweetTrack"></div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div style="max-width:1280px;margin:0 auto;padding:clamp(60px,8vw,110px) clamp(28px,4vw,40px)">
+    <p class="eyebrow">002 — Materiality &amp; function</p>
+    <div class="mat-grid">
+      <div class="mat">
+        <img loading="lazy" src="web/collar.jpg" alt="Song brocade collar">
+        <h3>Song brocade collar <span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed);font-weight:300">宋锦</span></h3>
+        <p>Song brocade silk runs the full length of the collar — a woven tradition with centuries behind it, set where the garment sits closest to the face.</p>
+      </div>
+      <div class="mat">
+        <img loading="lazy" src="web/quilt.jpg" alt="Padded cotton–nylon body">
+        <h3>Padded cotton–nylon body</h3>
+        <p>A lightly padded cotton–nylon shell holds its line without stiffness, wave-quilted so the loft stays even after years of wear.</p>
+      </div>
+      <div class="mat">
+        <img loading="lazy" src="web/pocket.jpg" alt="Patterned quilt lining and inner pocket">
+        <h3>Patterned quilt lining &amp; inner pocket</h3>
+        <p>Inside, a satin wave quilt meets the brocade placket, with a deep interior pocket sized for a phone, a passport or a hardware wallet.</p>
+      </div>
+      <div class="mat">
+        <img loading="lazy" src="web/embroidery.jpg" alt="岩花 embroidery">
+        <h3><span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed);font-weight:300">岩花</span> embroidery</h3>
+        <p>The house mark <span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed)">岩花</span> — cliff flower, the alpine bloom that roots in stone — embroidered by hand at the hem in tonal thread.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="two-col" style="max-width:960px">
+    <div>
+      <img loading="lazy" src="web/portrait.jpg" alt="Shina Foo" style="width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--ground-alt);border:.5px solid var(--hair)">
+    </div>
+    <div>
+      <p class="eyebrow">003 — About me</p>
+      <h2 class="h2" style="font-size:clamp(26px,3.4vw,40px);max-width:22ch;margin-bottom:26px"><a href="https://shizudio.me" target="_blank" rel="noopener" style="color:inherit;border-bottom:.5px solid var(--hair-strong)">Hi, I'm Shina Foo.</a></h2>
+      <p class="body">I design and make art. I split my time between tech, canvas and coffee chats — based in Singapore, working across art, fintech and design.</p>
+      <p class="body" style="margin-bottom:26px">Currently shipping StoneFlower. The Breakpoint Kimono is the garment we have cut for the crowd we truly care about — the Solana community.</p>
+      <div class="meta-ledger">
+        <div class="ledger-row"><span>Based in</span><span style="opacity:.72">Singapore</span></div>
+        <div class="ledger-row"><span>Working in</span><span style="opacity:.72">Art · Fintech · Design</span></div>
+        <div class="ledger-row"><span>Shipping</span><a href="https://shizudio.me/stoneflower.html" target="_blank" rel="noopener">StoneFlower</a></div>
+        <div class="ledger-row"><span>Elsewhere</span><span style="display:flex;gap:14px"><a href="https://shizudio.me/work.html" target="_blank" rel="noopener">Work</a><a href="https://www.instagram.com/shizudio" target="_blank" rel="noopener">Instagram</a><a href="https://x.com/shizudio" target="_blank" rel="noopener">X</a></span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div style="max-width:720px;margin:0 auto;padding:clamp(48px,6vw,80px) clamp(28px,4vw,40px)">
+    <p class="eyebrow">004 — You will wear it with</p>
+    <h2 class="h2" style="font-size:clamp(26px,3.4vw,40px);max-width:24ch;margin-bottom:36px">The others in the run.</h2>
+    <div class="lb" id="leaderboard"></div>
+  </div>
+</section>
+
+<section class="section">
+  <div style="max-width:720px;margin:0 auto;padding:clamp(48px,6vw,80px) clamp(28px,4vw,40px)">
+    <p class="eyebrow">005 — Questions</p>
+    <div class="faq" id="faq"></div>
+    <p style="margin:36px 0 0;font-size:11.5px;line-height:1.8;opacity:.5">Anything else → <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a></p>
+  </div>
+</section>
+
+<section class="section" id="order">
+  <div style="max-width:720px;margin:0 auto;padding:clamp(60px,8vw,110px) clamp(28px,4vw,40px)">
+    <p class="eyebrow">006 — Presale</p>
+    <div class="order-card">
+      <div class="order-head">
+        <h2>$300 <span>per piece</span></h2>
+        <span style="font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.5"><span id="remaining">10</span> of 15 remaining · Ships Nov</span>
+      </div>
+      <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
+        <button class="btn-purple" data-open-wallet>Connect Solana wallet · pay USDC or USDT</button>
+        <div class="fallback"><span>No wallet on hand?</span><button class="link-btn" id="toggleForm">Order by form</button></div>
+        <form class="form" id="orderForm" hidden>
+          <input class="field" name="name" placeholder="Name" autocomplete="name" required>
+          <input class="field" name="email" type="email" placeholder="Email" autocomplete="email" required>
+          <input class="field" name="handle" placeholder="X handle (optional)">
+          <button class="btn-outline" type="submit">Submit order request</button>
+          <p class="footnote">We confirm each piece by hand and send payment details by email. Unsubscribe any time.</p>
+        </form>
+      </div>
+      <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
+    </div>
+  </div>
+</section>
+
+<div id="modal" hidden>
+  <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  /* The presale end date. Fixed and shared by every visitor — not a per-visitor
+     timer. Move this to the server when the reservation API lands. */
+  var PRESALE_ENDS = Date.UTC(2026, 8, 29, 12, 0, 0); // 2026-09-29 12:00 UTC
+
+  var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
+  var WALLETS = ["Phantom", "Solflare", "Backpack"];
+  var FRAMES = 72;
+  var SPAN = 2600; // px of wheel travel for one full rotation
+
+  var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  var state = {
+    buyers: ["mika.sol", "0xkenji", "ayaverse", "soltaro", "ryu_dgn"],
+    baseCount: 5,
+    modal: null,
+    wallet: null,
+    twitterOptIn: true,
+    myHandle: "",
+    faqOpen: 0
+  };
+
+  var count = function () { return Math.min(15, state.baseCount + (state.buyers.length - 5)); };
+
+  var $ = function (sel) { return document.querySelector(sel); };
+  var el = function (tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in attrs) {
+      if (k === "style") n.style.cssText = attrs[k];
+      else if (k === "text") n.textContent = attrs[k];
+      else if (k === "html") n.innerHTML = attrs[k];
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { n.appendChild(c); });
+    return n;
+  };
+
+  /* ---------- countdown ---------- */
+  function pad(n) { return String(n).padStart(2, "0"); }
+  function tickClock() {
+    var left = Math.max(0, PRESALE_ENDS - Date.now());
+    var d = Math.floor(left / 86400000),
+        h = Math.floor(left / 3600000) % 24,
+        m = Math.floor(left / 60000) % 60,
+        s = Math.floor(left / 1000) % 60;
+    $("#countdown").textContent = d + "d " + pad(h) + ":" + pad(m) + ":" + pad(s);
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  /* ---------- derived views ---------- */
+  function renderReserve() {
+    var c = count();
+    $("#countNum").textContent = c;
+    $("#fill").style.width = (c / 15 * 100).toFixed(0) + "%";
+    $("#remaining").textContent = 15 - c;
+
+    var shown = state.buyers.slice(0, 4);
+    var bubbles = $("#bubbles");
+    bubbles.textContent = "";
+    shown.forEach(function (b, i) {
+      bubbles.appendChild(el("div", {
+        class: "bubble",
+        style: "background:" + TINTS[i % 4],
+        text: b[0].toUpperCase()
+      }));
+    });
+    var more = Math.max(0, c - shown.length);
+    $("#proofText").textContent = "@" + shown.join(", @") + " and " + more + " more reserved";
+
+    var sold = c >= 15;
+    $("#orderLive").hidden = sold;
+    $("#soldOut").hidden = !sold;
+  }
+
+  function renderLeaderboard() {
+    var c = count();
+    var lb = $("#leaderboard");
+    lb.textContent = "";
+    for (var i = 0; i < 15; i++) {
+      var b = state.buyers[i];
+      var taken = i < c && !!b;
+      var row = el("a", {
+        href: taken ? "https://x.com/" + b : "https://x.com/shizudio",
+        target: "_blank",
+        rel: "noopener"
+      }, [
+        el("span", { class: "no", text: pad(i + 1) }),
+        el("span", {
+          class: "av",
+          style: "background:" + (taken ? TINTS[i % 5] : "transparent"),
+          text: taken ? b[0].toUpperCase() : ""
+        }),
+        el("span", {
+          class: "handle",
+          style: "opacity:" + (taken ? ".85" : ".3"),
+          text: taken ? "@" + b : "Open"
+        }),
+        el("span", {
+          class: "state",
+          style: "color:" + (taken ? "#14F195" : "rgba(247,244,238,.3)"),
+          text: taken ? "Reserved" : "—"
+        })
+      ]);
+      lb.appendChild(row);
+    }
+  }
+
+  /* ---------- marquee ---------- */
+  var SHOTS = [
+    { img: "web/shot1.jpg", cap: "Perena print, back panel", href: "https://x.com/shizudio/status/1963795213446746519" },
+    { img: "web/shot2.jpg", cap: "PopX booth, Perenimals", href: "https://x.com/shizudio/status/1999800268993749059" },
+    { img: "web/shot3.jpg", cap: "Solana Summit APAC", href: "https://x.com/shizudio/status/1963795213446746519" },
+    { img: "web/shot4.jpg", cap: "On camera, side event", href: "https://x.com/shizudio/status/1999800268993749059" },
+    { img: "web/shot5.jpg", cap: "Workshop, Singapore", href: "https://x.com/shizudio/status/1963795213446746519" },
+    { img: "web/shot6.jpg", cap: "Studio set, first run", href: "https://x.com/shizudio/status/1999800268993749059" }
+  ];
+  function renderMarquee() {
+    var track = $("#tweetTrack");
+    // duplicated so the loop wraps seamlessly
+    SHOTS.concat(SHOTS).forEach(function (s) {
+      track.appendChild(el("a", { class: "shot", href: s.href, target: "_blank", rel: "noopener" }, [
+        el("img", { loading: "lazy", src: s.img, alt: s.cap }),
+        el("div", { class: "meta" }, [
+          el("span", { style: "opacity:.72", text: s.cap }),
+          el("span", { style: "opacity:.4", text: "↗" })
+        ])
+      ]));
+    });
+  }
+  function startMarquee() {
+    if (reduceMotion) return;
+    var track = $("#tweetTrack"), wrap = $("#tweetWrap");
+    var x = 0, paused = false, last = performance.now();
+    wrap.addEventListener("mouseenter", function () { paused = true; });
+    wrap.addEventListener("mouseleave", function () { paused = false; });
+    // The loop period is the offset of the first duplicated card, not scrollWidth/2:
+    // 12 children carry only 11 gaps, so half the track is half a gap short and the
+    // marquee would jump backwards on every wrap.
+    function period() {
+      var dup = track.children[SHOTS.length];
+      return dup ? dup.offsetLeft : track.scrollWidth / 2;
+    }
+    function tick(now) {
+      var dt = Math.min(48, now - last); last = now;
+      if (!paused) x += 0.42 * dt / 16.7;
+      var p = period();
+      if (p > 0 && x >= p) x -= p;
+      track.style.transform = "translateX(" + -x + "px)";
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- FAQ ---------- */
+  var FAQS = [
+    { q: "Why only fifteen?", a: "Every piece is cut and finished on one table. Fifteen is what we can make properly between now and Breakpoint without handing the work to someone else." },
+    { q: "When does it ship?", a: "We cut through October and ship in November, ahead of the event. If you would rather collect yours in person at Breakpoint, say so in the form and we will hold it." },
+    { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
+    { q: "How does paying with USDC or USDT work?", a: "Connect a Solana wallet, approve a single 300 transfer to the studio address, and your piece is held against that transaction. No mint, no token, no secondary anything." },
+    { q: "What if I cannot use a wallet?", a: "Use the order form. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
+    { q: "Can I get a refund?", a: "Until we cut your piece, yes — write to us and we return the full amount. Once it is on the table it belongs to you." }
+  ];
+  function renderFaq() {
+    var wrap = $("#faq");
+    wrap.textContent = "";
+    FAQS.forEach(function (f, i) {
+      var open = state.faqOpen === i;
+      var btn = el("button", {
+        class: "faq-q", type: "button", "aria-expanded": open ? "true" : "false"
+      }, [
+        el("span", { text: f.q }),
+        el("span", { class: "sign", text: open ? "−" : "+" })
+      ]);
+      btn.addEventListener("click", function () {
+        state.faqOpen = state.faqOpen === i ? null : i; // only one open at a time
+        renderFaq();
+      });
+      var item = el("div", { class: "faq-item" }, [btn]);
+      if (open) item.appendChild(el("p", { class: "faq-a", text: f.a }));
+      wrap.appendChild(item);
+    });
+  }
+
+  /* ---------- modal ---------- */
+  var modal = $("#modal"), panel = modal.firstElementChild;
+  modal.addEventListener("click", function () { setModal(null); });
+  panel.addEventListener("click", function (e) { e.stopPropagation(); });
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape" && state.modal) setModal(null);
+  });
+
+  function setModal(step) { state.modal = step; renderModal(); }
+
+  function eyebrow(t) { return el("p", { class: "eyebrow", text: t }); }
+  function title(t) { return el("h3", { id: "modalTitle", text: t }); }
+  function ghostClose() {
+    var b = el("button", { class: "btn-ghost", type: "button", text: "Close" });
+    b.addEventListener("click", function () { setModal(null); });
+    return b;
+  }
+
+  function finish() {
+    var handle = (state.myHandle || "").replace(/^@/, "") || "anon";
+    state.buyers = [handle].concat(state.buyers);
+    renderReserve();
+    renderLeaderboard();
+    setModal("done");
+  }
+
+  function renderModal() {
+    if (!state.modal) { modal.hidden = true; return; }
+    modal.hidden = false;
+    panel.textContent = "";
+
+    if (state.modal === "wallet") {
+      panel.appendChild(eyebrow("Step one"));
+      panel.appendChild(title("Connect a wallet"));
+      WALLETS.forEach(function (w) {
+        var b = el("button", { class: "wallet-btn", type: "button" }, [
+          el("span", { text: w }),
+          el("span", { style: "opacity:.5", text: "→" })
+        ]);
+        b.addEventListener("click", function () { state.wallet = w; setModal("pay"); });
+        panel.appendChild(b);
+      });
+
+    } else if (state.modal === "pay") {
+      panel.appendChild(eyebrow("Step two"));
+      panel.appendChild(title("Pay 300"));
+      panel.appendChild(el("div", { style: "font-size:11.5px;opacity:.5", text: state.wallet + " · 7xKp…3rQm" }));
+      var pays = el("div", { style: "display:flex;gap:12px" });
+      ["300 USDC", "300 USDT"].forEach(function (label) {
+        var b = el("button", { class: "btn-outline", type: "button", style: "flex:1;letter-spacing:.24em;padding:17px", text: label });
+        b.addEventListener("click", finish);
+        pays.appendChild(b);
+      });
+      panel.appendChild(pays);
+
+      var cb = el("input", { type: "checkbox" });
+      cb.checked = state.twitterOptIn;
+      var label = el("label", { class: "optin" }, [cb]);
+      label.appendChild(document.createTextNode("Connect X, so your order card is ready to post once payment settles."));
+      panel.appendChild(label);
+
+      var handleInput = el("input", { class: "field", placeholder: "@yourhandle" });
+      handleInput.value = state.myHandle;
+      handleInput.hidden = !state.twitterOptIn;
+      handleInput.addEventListener("input", function (e) { state.myHandle = e.target.value; });
+      cb.addEventListener("change", function () {
+        state.twitterOptIn = cb.checked;
+        handleInput.hidden = !state.twitterOptIn;
+      });
+      panel.appendChild(handleInput);
+
+    } else if (state.modal === "done") {
+      var shownHandle = state.myHandle
+        ? (state.myHandle[0] === "@" ? state.myHandle : "@" + state.myHandle)
+        : "@you";
+      panel.appendChild(eyebrow("Reserved"));
+      panel.appendChild(title("Your piece is held."));
+      panel.appendChild(el("div", { class: "card-frame" }, [
+        el("div", { class: "card-grad" }, [
+          el("div", { style: "font-size:9px;letter-spacing:.34em;text-transform:uppercase", text: "Shizudio · Breakpoint 2026" }),
+          el("div", { style: "font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1", text: "The Breakpoint Kimono" }),
+          el("div", { style: "font-size:11px;letter-spacing:.06em", text: shownHandle + " · piece " + count() + " of 15" })
+        ]),
+        el("div", { style: "padding:14px 18px;font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4", text: "Your order card" })
+      ]));
+      var post = el("button", { class: "btn-invert", type: "button", text: "Post on X" });
+      post.addEventListener("click", function () {
+        window.open("https://x.com/intent/tweet?text=" + encodeURIComponent("Reserved my Breakpoint Kimono — one of fifteen. @shizudio, Solana Breakpoint 2026."), "_blank");
+      });
+      panel.appendChild(post);
+      panel.appendChild(ghostClose());
+
+    } else if (state.modal === "formdone") {
+      panel.appendChild(eyebrow("Received"));
+      panel.appendChild(title("Request received."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        html: 'We confirm your piece and send payment details by email within a day. Questions → <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
+      }));
+      panel.appendChild(ghostClose());
+    }
+
+    var first = panel.querySelector("button, input");
+    if (first) first.focus();
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
+    b.addEventListener("click", function () { setModal("wallet"); });
+  });
+
+  $("#toggleForm").addEventListener("click", function () {
+    var f = $("#orderForm");
+    f.hidden = !f.hidden;
+    if (!f.hidden) f.querySelector("input").focus();
+  });
+  $("#orderForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    setModal("formdone");
+  });
+
+  /* ---------- turntable: scroll lock + scrub ---------- */
+  var img = $("#turntable");
+  var targetP = 0, curP = null, frame = 0, raf = null, locked = false;
+
+  function scroller() { return document.scrollingElement || document.documentElement; }
+  function setLock(on) {
+    if (on === locked) return;
+    locked = on;
+    document.documentElement.style.overflow = on ? "hidden" : "";
+    document.body.style.overflow = on ? "hidden" : "";
+  }
+  function drive() {
+    if (raf) return;
+    raf = requestAnimationFrame(function tick() {
+      raf = null;
+      curP = curP == null ? targetP : curP + (targetP - curP) * 0.18;
+      var i = Math.min(FRAMES - 1, Math.max(0, Math.round(curP * (FRAMES - 1))));
+      if (i !== frame) { frame = i; img.src = "frames3/f" + pad(i) + ".jpg"; }
+      if (Math.abs(targetP - curP) > 0.002) raf = requestAnimationFrame(tick);
+    });
+  }
+  function consume(dy) {
+    if (locked) {
+      targetP = Math.min(1, Math.max(0, targetP + dy / SPAN));
+      if (targetP >= 1 && dy > 0) setLock(false);
+      drive();
+      return true;
+    }
+    // scrolled back to the top going up — re-lock and reverse the rotation
+    if (dy < 0 && scroller().scrollTop <= 0) { setLock(true); targetP = 0.999; drive(); return true; }
+    return false;
+  }
+
+  var ty = 0;
+  function onWheel(e) { if (consume(e.deltaY)) e.preventDefault(); }
+  function onTouchStart(e) { ty = e.touches[0].clientY; }
+  function onTouchMove(e) {
+    var y = e.touches[0].clientY, dy = (ty - y) * 2.2;
+    ty = y;
+    if (consume(dy)) e.preventDefault();
+  }
+
+  if (!reduceMotion) {
+    setLock(true);
+    window.addEventListener("wheel", onWheel, { passive: false });
+    window.addEventListener("touchstart", onTouchStart, { passive: true });
+    window.addEventListener("touchmove", onTouchMove, { passive: false });
+  }
+
+  /* ---------- loader / frame preload ---------- */
+  var loaded = 0, dismissed = false;
+  function dismissLoader() {
+    if (dismissed) return;
+    dismissed = true;
+    var l = $("#loader");
+    l.classList.add("gone");
+    setTimeout(function () { l.remove(); }, 450);
+  }
+  function tally() {
+    loaded++;
+    var pct = Math.min(100, Math.round(loaded / FRAMES * 100));
+    $("#sealClip").style.height = pct + "%";
+    $("#loadPct").textContent = String(pct).padStart(3, "0") + " / 100";
+    if (loaded >= FRAMES) setTimeout(dismissLoader, 420);
+  }
+  if (reduceMotion) {
+    dismissLoader();
+  } else {
+    var keep = [];
+    for (var i = 0; i < FRAMES; i++) {
+      var im = new Image();
+      im.onload = tally;
+      im.onerror = tally;
+      im.src = "frames3/f" + pad(i) + ".jpg";
+      keep.push(im);
+    }
+    setTimeout(dismissLoader, 9000); // never strand a slow connection behind the loader
+  }
+
+  /* ---------- go ---------- */
+  renderReserve();
+  renderLeaderboard();
+  renderMarquee();
+  renderFaq();
+  startMarquee();
+  drive();
+})();
+</script>
+</body>
+</html>
