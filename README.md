@@ -160,12 +160,24 @@ phone. It mails the address in the ledger and nowhere else: an endpoint that too
 a destination would turn the ledger into a way to send a stranger's pickup code
 anywhere.
 
-Set up: **resend.com** → Domains → add yours and put in the DKIM/SPF records →
-API Keys → copy into `RESEND_API_KEY`. `EMAIL_FROM` must be on that verified
-domain. This is the failure worth knowing about, because it is silent: Resend
-accepts an unverified sender at the API and drops the send, so the buyer hears
+Set up: **resend.com** → Domains → add `shizudio.me` and put its DKIM/SPF
+records into DNS → API Keys → copy into `RESEND_API_KEY`. `EMAIL_FROM` must be
+on that verified domain.
+
+It cannot be a Gmail address. Verification is a DNS record on the sending
+domain, and nobody can add one to `gmail.com` — so the mailbox a buyer should
+actually reach goes in `EMAIL_REPLY_TO` instead, and their reply lands there.
+Note that `shizudio.me` has no MX: replies work, but an address typed by hand at
+that domain bounces, so do not print one anywhere.
+
+Until the domain is verified Resend will only deliver to the address that owns
+the account, and rejects everything else with a 403 that reads like a bug. This
+is the failure worth knowing about, because in production it is silent: an
+unverified sender is accepted at the API and dropped, so the buyer hears
 nothing. `npm run server:check` checks the domain is verified and delivers one
-real test email to `EMAIL_BCC`, so you find out before a buyer does.
+real test email to `EMAIL_BCC`, so you find out before a buyer does. A
+send-only API key cannot read the domain list, so that check downgrades to a
+warning rather than a pass — the test send is what proves it either way.
 
 **What this costs in secrecy, deliberately.** A pickup code is a bearer token for
 a physical object, and everything else here keeps it out of URLs, logs and
