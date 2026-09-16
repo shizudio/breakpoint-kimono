@@ -236,6 +236,27 @@ To swap the video: extract into `public/frames-<next>/`, then update all three o
 `FRAMES_DIR` in the script, the hero `<img src>`, and the `headers` source in
 `vercel.json`. The script comment next to `FRAMES_DIR` says the same.
 
+## Wave two
+
+Once the fifteen are gone the page does not become a waitlist — it opens wave
+two as a conditional pre-order:
+
+- **Pay now** is the emphasised path, and runs the same form → wallet → pay flow
+  as the presale.
+- **Email me updates** is the quiet fallback for anyone not ready to pay.
+
+Wave two is confirmed once enough orders come in to cut it and reach Breakpoint
+on time. **If it does not go ahead, every payment is returned in full.** That
+promise is stated before payment, on the confirmation, and in the FAQ, and the
+rows are held as `status = 'pending_wave'` until the run is confirmed.
+
+Wave two is **not capped at fifteen** — it is confirmed by volume, not limited
+by it — so its orders never sell out and never consume a wave-one piece. Piece
+numbers are unique per wave, and there is one live order per email per wave.
+
+There is no target number in the UI because none was set; if you want a
+"N of M committed" bar for wave two, give me the threshold.
+
 ## Previewing the sold-out states
 
     /?preview=soldout

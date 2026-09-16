@@ -17,19 +17,22 @@ export default async function handler(req, res) {
 
     if ((req.query && req.query.format) === "csv") {
       const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-      const lines = ["list,piece,name,email,x,telegram,created_at"];
+      const lines = ["list,wave,piece,status,name,email,x,telegram,created_at"];
       orders.forEach((o) => lines.push(
-        ["order", o.piece, o.name, o.email, o.x_handle, o.tg_handle, o.created_at].map(esc).join(",")));
+        ["order", o.wave, o.piece, o.status, o.name, o.email, o.x_handle, o.tg_handle, o.created_at].map(esc).join(",")));
       waitlist.forEach((w) => lines.push(
-        ["waitlist", "", w.name, w.email, w.x_handle, w.tg_handle, w.created_at].map(esc).join(",")));
+        ["notify", "", "", "", w.name, w.email, w.x_handle, w.tg_handle, w.created_at].map(esc).join(",")));
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", 'attachment; filename="breakpoint-kimono.csv"');
       return res.status(200).send(lines.join("\n"));
     }
 
+    const wave1 = orders.filter((o) => Number(o.wave) === 1);
+    const wave2 = orders.filter((o) => Number(o.wave) === 2);
     return res.status(200).json({
-      orders: { count: orders.length, rows: orders },
-      waitlist: { count: waitlist.length, rows: waitlist }
+      wave1: { count: wave1.length, of: 15, rows: wave1 },
+      wave2: { count: wave2.length, status: "pending_confirmation", rows: wave2 },
+      notify: { count: waitlist.length, rows: waitlist }
     });
   } catch (e) {
     console.error("admin failed", e);

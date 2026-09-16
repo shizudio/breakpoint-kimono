@@ -22,7 +22,8 @@ async function sql() {
       await client`
         CREATE TABLE IF NOT EXISTS orders (
           id          bigserial PRIMARY KEY,
-          piece       integer UNIQUE,
+          wave        integer NOT NULL DEFAULT 1,
+          piece       integer,
           name        text NOT NULL,
           email       text NOT NULL,
           x_handle    text,
@@ -41,10 +42,16 @@ async function sql() {
           tg_handle   text,
           created_at  timestamptz NOT NULL DEFAULT now()
         )`;
-      // One live order per email — a double submit must not take two pieces.
+      // Existing rows predate the column; default them to wave one.
+      await client`ALTER TABLE orders ADD COLUMN IF NOT EXISTS wave integer NOT NULL DEFAULT 1`;
+      // Piece numbers are unique within a wave, not across the whole table.
+      await client`
+        CREATE UNIQUE INDEX IF NOT EXISTS orders_wave_piece
+        ON orders (wave, piece) WHERE status <> 'cancelled'`;
+      // One live order per email per wave — a double submit must not take two.
       await client`
         CREATE UNIQUE INDEX IF NOT EXISTS orders_email_live
-        ON orders (lower(email)) WHERE status <> 'cancelled'`;
+        ON orders (wave, lower(email)) WHERE status <> 'cancelled'`;
       await client`
         CREATE UNIQUE INDEX IF NOT EXISTS waitlist_email_once
         ON waitlist (lower(email))`;
@@ -56,11 +63,15 @@ async function sql() {
 
 export const PIECES = 15;
 
-export async function listOrders() {
+export async function listOrders(wave = null) {
   const client = await sql();
   if (!client) return [];
-  return client`SELECT piece, name, email, x_handle, tg_handle, status, created_at
-                FROM orders WHERE status <> 'cancelled' ORDER BY piece ASC`;
+  if (wave === null) {
+    return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, created_at
+                  FROM orders WHERE status <> 'cancelled' ORDER BY wave ASC, piece ASC`;
+  }
+  return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, created_at
+                FROM orders WHERE status <> 'cancelled' AND wave = ${wave} ORDER BY piece ASC`;
 }
 
 export async function listWaitlist() {
@@ -73,25 +84,44 @@ export async function listWaitlist() {
 /* Claims the lowest free piece number inside a single statement, so two
    simultaneous buyers cannot be handed the same one. The client-side cap is
    display only; this is the one that counts. */
-export async function claimPiece({ name, email, x, tg, wallet, tx }) {
+/* Wave one is a hard run of fifteen, so its pieces are claimed from a fixed
+   series and run out. Wave two is open-ended — it is confirmed by volume, not
+   capped by it — so its orders simply take the next number and never sell out.
+   Wave-two rows are held as 'pending_wave' until the run is confirmed, which is
+   what the refund promise on the page is anchored to. */
+export async function claimPiece({ name, email, x, tg, wallet, tx, wave = 1 }) {
   const client = await sql();
   if (!client) return { ok: false, reason: "not_configured" };
+  const w = wave === 2 ? 2 : 1;
 
   const existing = await client`
-    SELECT piece FROM orders WHERE lower(email) = lower(${email}) AND status <> 'cancelled'`;
-  if (existing.length) return { ok: true, piece: existing[0].piece, already: true };
+    SELECT piece FROM orders
+    WHERE wave = ${w} AND lower(email) = lower(${email}) AND status <> 'cancelled'`;
+  if (existing.length) return { ok: true, piece: existing[0].piece, wave: w, already: true };
+
+  if (w === 2) {
+    const rows = await client`
+      INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx, status)
+      SELECT 2,
+             COALESCE((SELECT MAX(piece) FROM orders WHERE wave = 2 AND status <> 'cancelled'), 0) + 1,
+             ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null},
+             'pending_wave'
+      RETURNING piece`;
+    return { ok: true, piece: rows[0].piece, wave: 2 };
+  }
 
   const rows = await client`
-    INSERT INTO orders (piece, name, email, x_handle, tg_handle, wallet, tx)
-    SELECT gs, ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null}
+    INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx)
+    SELECT 1, gs, ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null}
     FROM generate_series(1, ${PIECES}) AS gs
-    WHERE NOT EXISTS (SELECT 1 FROM orders o WHERE o.piece = gs AND o.status <> 'cancelled')
+    WHERE NOT EXISTS (
+      SELECT 1 FROM orders o WHERE o.wave = 1 AND o.piece = gs AND o.status <> 'cancelled')
     ORDER BY gs
     LIMIT 1
     RETURNING piece`;
 
   if (!rows.length) return { ok: false, reason: "sold_out" };
-  return { ok: true, piece: rows[0].piece };
+  return { ok: true, piece: rows[0].piece, wave: 1 };
 }
 
 export async function addWaitlist({ name, email, x, tg }) {

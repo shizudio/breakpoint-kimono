@@ -42,6 +42,9 @@ a:hover{color:var(--accent2)}
 input::placeholder{color:rgba(247,244,238,.4)}
 button{font:inherit;border-radius:0}
 img{display:block}
+/* An inline display beats the hidden attribute, and several blocks here set both.
+   Without this, hiding an element by .hidden silently does nothing. */
+[hidden]{display:none!important}
 :focus-visible{outline:1px solid var(--accent2);outline-offset:3px}
 
 @keyframes sol-wave{0%{background-position:0% 50%}100%{background-position:200% 50%}}
@@ -358,10 +361,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
         <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the form nor the wallet is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
       </div>
-      <div id="soldOut" hidden style="display:flex;flex-direction:column;gap:20px">
-        <p class="soldout" style="margin:0">All fifteen are accounted for.</p>
-        <button class="btn-outline" data-open-waitlist style="width:100%">Join the waitlist</button>
-        <p class="footnote" style="text-align:center">We cut a second wave when this one ships. Waitlist goes first.</p>
+      <div id="soldOut" hidden style="display:flex;flex-direction:column;gap:18px">
+        <p class="soldout" style="margin:0">All fifteen are accounted for. Wave two is open.</p>
+        <button class="btn-purple" data-open-wave2>Join wave two · $300</button>
+        <p class="footnote" style="text-align:center;margin:-4px 0 0">Wave two is confirmed once enough orders come in for us to cut it and reach Breakpoint on time. If it does not go ahead, every payment is returned in full.</p>
+        <div class="fallback"><span>Not ready to pay?</span><button class="link-btn" data-open-notify>Email me updates</button></div>
       </div>
     </div>
   </div>
@@ -453,7 +457,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     buyers: ["shizudio", "gizmothegizzer"],
     modal: null,
     wallet: null,
-    intent: "order",   // "order" | "waitlist"
+    intent: "order",   // "order" (wave 1) | "wave2" (pay now) | "notify" (email only)
     alreadyPiece: 0,
     myPiece: 0,
     faqOpen: 0
@@ -552,8 +556,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     // stop offering a piece, or it promises something we cannot deliver.
     var cta = $(".cta");
     if (cta) {
-      cta.textContent = sold ? "Join the waitlist" : "Reserve yours at $300";
-      cta.setAttribute("data-mode", sold ? "waitlist" : "order");
+      cta.textContent = sold ? "Join wave two · $300" : "Reserve yours at $300";
+      cta.setAttribute("data-mode", sold ? "wave2" : "order");
     }
     tickClock();
   }
@@ -690,6 +694,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   function finish() {
+    if (state.intent === "wave2") {
+      postJSON("/api/order", Object.assign({ wave: 2 }, lastOrder || {}));
+      setModal("wave2done");
+      return;
+    }
     // Client-side gate first, so the common case never round-trips.
     if (isSoldOut()) { setModal("gone"); return; }
     var handle = (lastOrder && lastOrder.x) || "anon";
@@ -731,14 +740,19 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     panel.textContent = "";
 
     if (state.modal === "details") {
-      var wait = state.intent === "waitlist";
-      panel.appendChild(eyebrow(wait ? "Waitlist" : "Step one"));
-      panel.appendChild(title(wait ? "Join the waitlist" : "Your details"));
-      if (wait) panel.appendChild(el("p", {
+      var notify = state.intent === "notify";
+      var wave2 = state.intent === "wave2";
+      panel.appendChild(eyebrow(notify ? "Updates" : wave2 ? "Wave two" : "Step one"));
+      panel.appendChild(title(notify ? "Keep me posted" : wave2 ? "Join wave two" : "Your details"));
+      if (notify) panel.appendChild(el("p", {
         class: "footnote",
-        text: "All fifteen are reserved. Leave your details and you go first when we cut the next wave."
+        text: "We write when wave two is confirmed, before it opens to anyone else. Nothing is charged."
       }));
-      orderForm.querySelector(".btn-outline").textContent = wait ? "Join the waitlist" : "Continue to payment";
+      if (wave2) panel.appendChild(el("p", {
+        class: "footnote",
+        text: "Wave two is confirmed once enough orders come in for us to cut it and reach Breakpoint on time. If it does not go ahead, every payment is returned in full."
+      }));
+      orderForm.querySelector(".btn-outline").textContent = notify ? "Email me updates" : "Continue to payment";
       // The form lives in #formHolder and is adopted by the panel, so its
       // validation wiring survives every re-render.
       orderForm.hidden = false;
@@ -751,11 +765,14 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       panel.appendChild(title("The last piece just went."));
       panel.appendChild(el("p", {
         style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
-        text: "Someone took the fifteenth while you were filling this in. Your details are still here — put them on the waitlist and you go first when we cut the next wave."
+        text: "Someone took the fifteenth while you were filling this in. Your details are still here — carry them into wave two, which we cut once enough orders come in. If it does not go ahead, your payment is returned in full."
       }));
-      var join = el("button", { class: "btn-invert", type: "button", text: "Join the waitlist" });
-      join.addEventListener("click", function () { submitWaitlist(lastOrder); });
-      panel.appendChild(join);
+      var toWave2 = el("button", { class: "btn-invert", type: "button", text: "Join wave two · $300" });
+      toWave2.addEventListener("click", function () { state.intent = "wave2"; setModal("wallet"); });
+      panel.appendChild(toWave2);
+      var notifyInstead = el("button", { class: "btn-ghost", type: "button", text: "Just email me updates" });
+      notifyInstead.addEventListener("click", function () { submitWaitlist(lastOrder); });
+      panel.appendChild(notifyInstead);
       panel.appendChild(ghostClose());
 
     } else if (state.modal === "already") {
@@ -768,12 +785,30 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       }));
       panel.appendChild(ghostClose());
 
-    } else if (state.modal === "waitlisted") {
-      panel.appendChild(eyebrow("On the list"));
-      panel.appendChild(title("You are on the waitlist."));
+    } else if (state.modal === "wave2done") {
+      panel.appendChild(eyebrow("Wave two"));
+      panel.appendChild(title("You are in wave two."));
       panel.appendChild(el("p", {
         style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
-        html: "We write to you before the next wave goes out. Nothing is charged today. Questions → " +
+        text: "We confirm wave two once enough orders come in to cut it and reach Breakpoint on time. You will hear either way."
+      }));
+      panel.appendChild(el("p", {
+        class: "footnote",
+        html: "If wave two does not go ahead, your payment is returned in full — you do not have to ask. " +
+              'You can also cancel any time by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.'
+      }));
+      panel.appendChild(el("p", {
+        class: "preview-note",
+        text: "This is a preview of the presale. No payment was taken."
+      }));
+      panel.appendChild(ghostClose());
+
+    } else if (state.modal === "waitlisted") {
+      panel.appendChild(eyebrow("On the list"));
+      panel.appendChild(title("We will keep you posted."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        html: "We write the moment wave two is confirmed. Nothing is charged today, and you can still pay to join it at any point. Questions → " +
               '<a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
       }));
       panel.appendChild(ghostClose());
@@ -869,7 +904,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
     b.addEventListener("click", function () {
-      state.intent = isSoldOut() ? "waitlist" : "order";
+      state.intent = isSoldOut() ? "wave2" : "order";
       setModal("details");
     });
   });
@@ -939,8 +974,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     ["name", "email", "x", "tg"].forEach(function (k) { setError(k, errs[k] || ""); });
   }
 
-  Array.prototype.forEach.call(document.querySelectorAll("[data-open-waitlist]"), function (b) {
-    b.addEventListener("click", function () { state.intent = "waitlist"; setModal("details"); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-wave2]"), function (b) {
+    b.addEventListener("click", function () { state.intent = "wave2"; setModal("details"); });
+  });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-notify]"), function (b) {
+    b.addEventListener("click", function () { state.intent = "notify"; setModal("details"); });
   });
 
   orderForm.addEventListener("submit", function (e) {
@@ -958,7 +996,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     $("#fTg").value = v.tg;
     lastOrder = v;
 
-    if (state.intent === "waitlist") { submitWaitlist(v); return; }
+    if (state.intent === "notify") { submitWaitlist(v); return; }
+
+    // Wave two is not capped at fifteen, so none of the wave-one gates apply.
+    if (state.intent === "wave2") { setModal("wallet"); return; }
 
     // Scenario D — they already hold a piece.
     var held = v.x && alreadyIn(v.x);

@@ -8,14 +8,15 @@ export default async function handler(req, res) {
   }
   try {
     const rows = await listOrders();
+    const wave1 = rows.filter((r) => Number(r.wave) === 1);
+    const wave2 = rows.filter((r) => Number(r.wave) === 2);
     return res.status(200).json({
       configured: true,
       pieces: PIECES,
-      reserved: rows.length,
-      buyers: rows
-        .slice()
-        .reverse()
-        .map((r) => ({ piece: r.piece, handle: r.x_handle || null }))
+      reserved: wave1.length,
+      // The fifteen-row ledger is wave one; wave two is reported as a count only.
+      buyers: wave1.slice().reverse().map((r) => ({ piece: r.piece, handle: r.x_handle || null })),
+      wave2: { count: wave2.length }
     });
   } catch (e) {
     console.error("reservations failed", e);
