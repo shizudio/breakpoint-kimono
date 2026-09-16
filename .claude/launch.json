@@ -3,16 +3,32 @@
   "configurations": [
     {
       "name": "kimono",
-      "comment": "The front end. It proxies /api and /admin to the API, so run `npm run server` alongside it or every call 404s — the counts stay at their fallbacks and Reserve fails.",
+      "comment": "The front end. It proxies /api and /admin to the API, so run `npm run server` alongside it or every call 404s \u2014 the counts stay at their fallbacks and Reserve fails.",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "start"],
+      "runtimeArgs": [
+        "run",
+        "start"
+      ],
       "port": 5173
     },
     {
       "name": "kimono-api",
       "comment": "The API and /admin. Serves no page: / is a 404 by design.",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "server"],
+      "runtimeArgs": [
+        "run",
+        "server"
+      ],
+      "port": 4321
+    },
+    {
+      "name": "kimono-single",
+      "comment": "One process serving everything: the API, /admin and the built site from dist/. Needs `npm run build` first. This is the shape the deployment takes \u2014 single origin, so no CORS and no SameSite=None.",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": [
+        "run",
+        "server"
+      ],
       "port": 4321
     }
   ]
