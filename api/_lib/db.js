@@ -126,6 +126,51 @@ export async function claimPiece({ name, email, x, tg, wallet, tx, wave = 1, mar
   return { ok: true, piece: rows[0].piece, wave: 1 };
 }
 
+/* Read-only. Confirms the tables and the two indexes that enforce the cap are
+   really there, and exercises the free-piece query without inserting. */
+export async function selfTest() {
+  const client = await sql();
+  if (!client) return { ok: false, error: "not_configured" };
+
+  const tables = await client`
+    SELECT table_name FROM information_schema.tables
+    WHERE table_schema = 'public' AND table_name IN ('orders','waitlist')
+    ORDER BY table_name`;
+  const indexes = await client`
+    SELECT indexname FROM pg_indexes
+    WHERE schemaname = 'public' AND indexname IN ('orders_wave_piece','orders_email_live','waitlist_email_once')
+    ORDER BY indexname`;
+  const cols = await client`
+    SELECT column_name FROM information_schema.columns
+    WHERE table_schema='public' AND table_name='orders' AND column_name IN ('wave','solana_mark')
+    ORDER BY column_name`;
+  const counts = await client`
+    SELECT wave, count(*)::int AS n FROM orders WHERE status <> 'cancelled' GROUP BY wave ORDER BY wave`;
+  const waiting = await client`SELECT count(*)::int AS n FROM waitlist`;
+  const nextFree = await client`
+    SELECT gs AS piece FROM generate_series(1, ${PIECES}) AS gs
+    WHERE NOT EXISTS (
+      SELECT 1 FROM orders o WHERE o.wave = 1 AND o.piece = gs AND o.status <> 'cancelled')
+    ORDER BY gs LIMIT 1`;
+
+  const tableNames = tables.map((t) => t.table_name);
+  const indexNames = indexes.map((i) => i.indexname);
+  const colNames = cols.map((c) => c.column_name);
+  const ok = tableNames.length === 2 && indexNames.length === 3 && colNames.length === 2;
+
+  return {
+    ok,
+    tables: tableNames,
+    indexes: indexNames,
+    orderColumns: colNames,
+    wave1: (counts.find((c) => Number(c.wave) === 1) || { n: 0 }).n,
+    wave2: (counts.find((c) => Number(c.wave) === 2) || { n: 0 }).n,
+    notify: waiting[0].n,
+    nextFreePiece: nextFree.length ? nextFree[0].piece : null,
+    soldOut: nextFree.length === 0
+  };
+}
+
 export async function addWaitlist({ name, email, x, tg }) {
   const client = await sql();
   if (!client) return { ok: false, reason: "not_configured" };

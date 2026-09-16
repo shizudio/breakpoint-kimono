@@ -300,6 +300,15 @@ handles and piece numbers only, never a name or an email address.
 This one returns names and email addresses, so it refuses to answer unless
 `ADMIN_KEY` is set and matches.
 
+### Checking it works
+
+    GET /api/health?key=<ADMIN_KEY>
+
+Read-only. Confirms both tables exist, that the three indexes enforcing the cap
+are really there, that `wave` and `solana_mark` landed, and it runs the
+free-piece query without inserting. `ok: true` means the schema is sound.
+Run it once immediately after connecting the database.
+
 ### Setup — two things in the Vercel dashboard
 
 1. **Storage → create a Postgres (Neon) database → connect it to this project.**
