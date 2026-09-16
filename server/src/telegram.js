@@ -58,6 +58,12 @@ export function notifyPaid(order) {
     order.x_handle ? "X: @" + esc(order.x_handle) : null,
     order.tg_handle ? "TG: @" + esc(order.tg_handle) : null,
     "",
+    /* The one line here that changes what gets made. An order taken before the
+       question existed reads as a question rather than as a "no". */
+    order.mark == null
+      ? "Inner pocket: <b>not asked</b>"
+      : "Inner pocket: <b>" + (order.mark ? "Solana mark" : "no mark") + "</b>",
+    "",
     "Pickup code: <code>" + esc(order.pickup_code) + "</code>",
     "Order: <code>" + esc(order.id) + "</code>",
     config.priceUsdc + " USDC · <a href=\"" + explorerTx(order.tx_signature) + "\">transaction</a>",

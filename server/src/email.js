@@ -58,6 +58,14 @@ function esc(s) {
     .replace(/"/g, "&quot;");
 }
 
+/* What the buyer chose for the inner pocket, in the words the panel used.
+   Null is "never asked" — an order taken before the question existed — and says
+   so rather than claiming they declined. */
+function markLine(order) {
+  if (order.mark == null) return null;
+  return order.mark ? "Solana mark" : "No mark";
+}
+
 /* "Shina Foo" -> "Shina". A confirmation that opens with someone's full legal
    name reads like a letter from a bank. */
 function firstName(name) {
@@ -217,7 +225,13 @@ export function sheetHtml(order) {
 
   <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>
 
-  <!-- .ordrow, the two rows the panel keeps -->
+  <!-- .ordrow — the garment first, then the receipt -->
+  ${markLine(order) ? `<tr><td style="border-bottom:1px solid ${HAIR};padding:9px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" style="font:300 12px/1.5 ${UI};letter-spacing:.06em;color:${INK_45};">Inner pocket</td>
+      <td align="right" style="font:300 12px/1.5 ${UI};color:${INK};">${esc(markLine(order))}</td>
+    </tr></table>
+  </td></tr>` : ""}
   <tr><td style="border-bottom:1px solid ${HAIR};padding:9px 0;">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
       <td align="left" style="font:300 12px/1.5 ${UI};letter-spacing:.06em;color:${INK_45};">Confirmation to</td>
@@ -266,6 +280,7 @@ export function sheetText(order) {
       order.piece_no + " — do not post it, and do not forward this email.",
     "(The QR attached to this email carries the same code.)",
     "",
+    markLine(order) ? "Inner pocket      " + markLine(order) : null,
     "Confirmation to   " + order.email,
     "Paid              " + config.priceUsdc + " USDC",
     "On chain          " + explorerTx(order.tx_signature),
@@ -273,7 +288,7 @@ export function sheetText(order) {
     "Order             " + order.id,
     "",
     "If you'd like to get a refund, contact @shizudio on X or @shina_foo on Telegram."
-  ].join("\n");
+  ].filter(function (l) { return l !== null; }).join("\n");
 }
 
 /* The one call the confirm route makes. Returns a reason rather than throwing,

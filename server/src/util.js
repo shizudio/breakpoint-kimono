@@ -57,7 +57,11 @@ export function validateOrder(input) {
     name: String(input.name == null ? "" : input.name).trim().slice(0, 120),
     email: String(input.email == null ? "" : input.email).trim().slice(0, 200),
     x: normHandle(input.x).slice(0, 40),
-    tg: normHandle(input.tg).slice(0, 60)
+    tg: normHandle(input.tg).slice(0, 60),
+    /* Three states, deliberately. The panel makes the buyer choose, so a body
+       without it is an older client or a hand-rolled request — recorded as
+       "never asked" rather than quietly as "no". */
+    mark: input.mark == null ? null : !!input.mark
   };
   var errs = {};
   if (!v.name) errs.name = "We need a name for the piece.";
@@ -66,6 +70,7 @@ export function validateOrder(input) {
   else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.email)) errs.email = "That address looks incomplete.";
   if (v.x && !/^[A-Za-z0-9_]{1,15}$/.test(v.x)) errs.x = "That does not look like an X handle.";
   if (v.tg && !/^[A-Za-z0-9_]{5,32}$/.test(v.tg)) errs.tg = "Telegram handles are 5–32 letters, digits or underscores.";
+  if (input.mark != null && typeof input.mark !== "boolean") errs.mark = "Choose the mark, or leave it off.";
   return { value: v, errors: errs, ok: Object.keys(errs).length === 0 };
 }
 
@@ -108,6 +113,7 @@ export function publicOrder(o, origin) {
     email: o.email,
     x: o.x_handle,
     tg: o.tg_handle,
+    mark: o.mark == null ? null : !!o.mark,
     amountUsdc: o.amount_usdc,
     signature: o.tx_signature,
     explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,

@@ -300,6 +300,7 @@ route("GET", /^\/api\/admin\/orders$/, async function (req, res) {
       return {
         id: o.id, status: o.status, piece: o.piece_no, name: o.name, email: o.email,
         x: o.x_handle, tg: o.tg_handle, wallet: o.wallet, pickupCode: o.pickup_code,
+        mark: o.mark == null ? null : !!o.mark,
         signature: o.tx_signature, explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,
         createdAt: o.created_at, paidAt: o.paid_at, collectedAt: o.collected_at,
         collectedBy: o.collected_by, notes: o.notes,

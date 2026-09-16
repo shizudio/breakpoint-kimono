@@ -11,7 +11,7 @@
     "start": "node --env-file=.env src/index.js",
     "dev": "node --env-file=.env --watch src/index.js",
     "vendor": "node scripts/vendor.js",
-    "test": "node --env-file=.env test/forgery.test.js && node --env-file=.env test/cap.test.js && node --env-file=.env test/api.test.js && node --env-file=.env test/notify.test.js && node --env-file=.env test/email.test.js && node --env-file=.env test/page.test.js && node --env-file=.env test/reconnect.test.js && node --env-file=.env test/pickup.test.js && node --env-file=.env test/scan.test.js",
+    "test": "node --env-file=.env test/migrate.test.js && node --env-file=.env test/forgery.test.js && node --env-file=.env test/cap.test.js && node --env-file=.env test/api.test.js && node --env-file=.env test/notify.test.js && node --env-file=.env test/email.test.js && node --env-file=.env test/page.test.js && node --env-file=.env test/reconnect.test.js && node --env-file=.env test/pickup.test.js && node --env-file=.env test/scan.test.js",
     "check": "node --env-file=.env scripts/check.js",
     "backup": "node --env-file=.env scripts/backup.js",
     "measure": "node --env-file=.env test/panel.measure.js",

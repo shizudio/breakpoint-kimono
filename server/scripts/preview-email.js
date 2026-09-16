@@ -18,6 +18,7 @@ var order = {
   name: "Shina Foo",
   email: "buyer@example.com",
   x_handle: "shizudio",
+  mark: 1,
   pickup_code: "K7M2-9QX4",
   tx_signature: "5j7sVbfMhpQ2rA9xKq3Lm8NvYc4TdUw1ZgHbEoPnRi6kSaXyJtFuCw2eDqMz3Bh"
 };

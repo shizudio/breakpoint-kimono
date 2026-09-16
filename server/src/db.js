@@ -61,7 +61,12 @@ CREATE TABLE IF NOT EXISTS orders (
   created_at      INTEGER NOT NULL,
   hold_expires_at INTEGER NOT NULL,
   paid_at         INTEGER,
-  notes           TEXT
+  notes           TEXT,
+  /* The Solana mark on the inner pocket: 1 chose it, 0 declined, NULL was never
+     asked. Three states, not two — an order taken before the question existed
+     is not the same as one where the buyer said no, and the difference decides
+     whether someone has to be asked before the piece is cut. */
+  mark            INTEGER
 );
 CREATE INDEX IF NOT EXISTS orders_status   ON orders(status);
 CREATE INDEX IF NOT EXISTS orders_wallet   ON orders(wallet);
@@ -83,6 +88,17 @@ CREATE TABLE IF NOT EXISTS events (
   detail   TEXT
 );
 `);
+
+/* CREATE TABLE IF NOT EXISTS does nothing to a ledger that already has rows, so
+   a column added after the first sale has to arrive this way. Adding one is
+   cheap and safe in SQLite — existing rows read NULL, which is exactly the
+   "never asked" state — but it must be idempotent, because this runs on every
+   boot. */
+function addColumn(table, column, decl) {
+  var has = db.prepare("SELECT 1 FROM pragma_table_info(?) WHERE name = ?").get(table, column);
+  if (!has) db.exec("ALTER TABLE " + table + " ADD COLUMN " + column + " " + decl);
+}
+addColumn("orders", "mark", "INTEGER");
 
 var q = function (sql) { return db.prepare(sql); };
 
@@ -107,6 +123,10 @@ function pickupCode() {
 }
 
 function orderId() { return randomUUID().replace(/-/g, "").slice(0, 16); }
+
+/* SQLite has no boolean. Undefined and null both mean "not asked" and must stay
+   NULL rather than collapsing into 0, which would read as "declined". */
+function markValue(v) { return v == null ? null : (v ? 1 : 0); }
 
 /* ---------- reads ---------- */
 
@@ -207,16 +227,17 @@ export function createPendingOrder(fields) {
       created_at: now,
       hold_expires_at: now + config.holdMinutes * 60000,
       paid_at: null,
-      notes: null
+      notes: null,
+      mark: markValue(fields.mark)
     };
     q(`INSERT INTO orders (id,status,piece_no,wallet,name,email,x_handle,tg_handle,
          amount_usdc,reference,tx_signature,pickup_code,collected_at,collected_by,
-         created_at,hold_expires_at,paid_at,notes)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+         created_at,hold_expires_at,paid_at,notes,mark)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(row.id, row.status, row.piece_no, row.wallet, row.name, row.email,
            row.x_handle, row.tg_handle, row.amount_usdc, row.reference, row.tx_signature,
            row.pickup_code, row.collected_at, row.collected_by, row.created_at,
-           row.hold_expires_at, row.paid_at, row.notes);
+           row.hold_expires_at, row.paid_at, row.notes, row.mark);
     logEvent(row.id, "order.pending", row.wallet);
     return row;
   });
@@ -233,9 +254,12 @@ export function reusePendingOrder(wallet, fields) {
                AND hold_expires_at >= ? ORDER BY created_at DESC LIMIT 1`).get(wallet, Date.now());
     if (!o) return null;
     var now = Date.now();
-    q(`UPDATE orders SET name=?, email=?, x_handle=?, tg_handle=?, reference=?, hold_expires_at=?
+    /* The mark moves with the rest: reopening the modal is exactly where someone
+       changes their mind about it, and a stale answer here is a wrong garment. */
+    q(`UPDATE orders SET name=?, email=?, x_handle=?, tg_handle=?, reference=?, hold_expires_at=?, mark=?
        WHERE id=?`).run(fields.name, fields.email, fields.x || null, fields.tg || null,
-                        fields.reference, now + config.holdMinutes * 60000, o.id);
+                        fields.reference, now + config.holdMinutes * 60000,
+                        markValue(fields.mark), o.id);
     logEvent(o.id, "order.reused", wallet);
     return q("SELECT * FROM orders WHERE id = ?").get(o.id);
   });

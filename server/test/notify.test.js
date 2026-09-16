@@ -50,12 +50,19 @@ async function settle() { await sleep(400); }        // notifications are fire-a
 // Seed two paid orders to hand over.
 process.env.DB_PATH = "../data/test/notify.db";
 process.env.ADMIN_WALLETS = ADMIN;
+/* Before the first import of anything under src/: config.js reads the
+   environment once, at module load, so a token set later leaves telegram.js
+   disabled and every in-process send silently returns false. */
+process.env.TELEGRAM_API = "http://127.0.0.1:" + TG_PORT;
+process.env.TELEGRAM_BOT_TOKEN = "test-token";
+process.env.TELEGRAM_CHAT_ID = "12345";
 var store = await import("../src/db.js");
 var made = [];
 for (var i = 0; i < 2; i++) {
   var p = store.createPendingOrder({
     wallet: "W" + i, name: ["Shina Foo", "Gizmo"][i], email: ["shina", "gizmo"][i] + "@example.com",
-    x: ["shizudio", "gizmothegizzer"][i], tg: null, reference: "R" + i
+    x: ["shizudio", "gizmothegizzer"][i], tg: null, reference: "R" + i,
+    mark: [true, false][i]
   });
   made.push(store.markPaid(p.id, encodeBase58(randomBytes(64))));
 }
@@ -138,7 +145,20 @@ try {
   check("a message went out", sent.length === before + 1);
   check("and it says that was the last", /That was the last one/.test(lastText()), lastText());
 
-  console.log("\nwhen Telegram is down");
+  console.log("\nwhat the sale message says about the pocket");
+var tg = await import("../src/telegram.js");
+var beforeMark = sent.length;
+await tg.notifyPaid(Object.assign({}, made[0], { mark: 1 }));
+check("a mark is called out", /Inner pocket: <b>Solana mark<\/b>/.test(lastText()), lastText());
+await tg.notifyPaid(Object.assign({}, made[0], { mark: 0 }));
+check("so is declining one", /Inner pocket: <b>no mark<\/b>/.test(lastText()), lastText());
+/* An order taken before the question existed must read as a question, not as a
+   no — someone has to go and ask before that piece is cut. */
+await tg.notifyPaid(Object.assign({}, made[0], { mark: null }));
+check("and an unasked order says so", /Inner pocket: <b>not asked<\/b>/.test(lastText()), lastText());
+check("three messages went out", sent.length === beforeMark + 3, sent.length - beforeMark);
+
+console.log("\nwhen Telegram is down");
   /* A sale must never wait on a notification, let alone fail with one. */
   tgFail = true;
   var store3 = await import("../src/db.js?reopen");

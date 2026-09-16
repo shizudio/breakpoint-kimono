@@ -81,7 +81,7 @@ var { pickupTarget } = await import("../src/qr.js");
 
 var pending = store.createPendingOrder({
   wallet: BUYER_WALLET, name: "Shina Foo", email: "buyer@example.test",
-  x: "shizudio", tg: null, reference: "Rmail"
+  x: "shizudio", tg: null, reference: "Rmail", mark: true
 });
 var order = store.markPaid(pending.id, encodeBase58(randomBytes(64)));
 
@@ -112,6 +112,12 @@ check("it thanks them as an early owner", /one of the first to own/.test(String(
 check("it says the venue is still to come", /update you on the\s+claiming venue soon/.test(String(m.text)));
 check("and how to get a refund", /@shizudio on X or @shina_foo on Telegram/.test(String(m.text)));
 check("it warns the code is a bearer token", /Keep this like a ticket/.test(String(m.html)));
+/* The only line in here that changes what gets made. A buyer who picked the
+   mark and receives a confirmation that does not mention it has no way to catch
+   the mistake before the piece is cut. */
+check("it confirms the inner pocket back to them", /Inner pocket/.test(String(m.html)));
+check("naming what they chose", /Solana mark/.test(String(m.html)));
+check("and in the plain-text part", /Inner pocket\s+Solana mark/.test(String(m.text)), String(m.text));
 /* The wallet is 44 characters of noise in a confirmation, and printing it in
    full puts the buyer's whole address in an inbox for no benefit. */
 /* The panel shows "Confirmation to" and "Paid" and no wallet, so neither does
@@ -151,13 +157,36 @@ check("the second send is refused", second.ok === false && second.reason === "AL
 check("and nothing more went out", sent.length === 1, sent.length);
 check("the ledger records the send", store.hasEvent(order.id, "email.sent"));
 
+console.log("\nthe buyer who declined the mark");
+var plainPending = store.createPendingOrder({
+  wallet: "W2", name: "Gizmo", email: "gizmo@example.test",
+  x: null, tg: null, reference: "Rplain", mark: false
+});
+var plain = store.markPaid(plainPending.id, encodeBase58(randomBytes(64)));
+check("is stored as declined, not as unasked", plain.mark === 0, plain.mark);
+await sendConfirmation(plain);
+check("and told so in their confirmation", /No mark/.test(String(last().html)));
+
+console.log("\nan order taken before the question existed");
+var legacyPending = store.createPendingOrder({
+  wallet: "W3", name: "Early Bird", email: "early@example.test",
+  x: null, tg: null, reference: "Rlegacy"
+});
+var legacy = store.markPaid(legacyPending.id, encodeBase58(randomBytes(64)));
+/* NULL, not 0. "Never asked" and "said no" are different instructions to
+   whoever cuts the piece. */
+check("stays null rather than collapsing to a no", legacy.mark === null, legacy.mark);
+await sendConfirmation(legacy);
+check("and the email claims nothing about the pocket", !/Inner pocket/.test(String(last().html)));
+
 console.log("\nan order nobody paid for");
 var unpaid = store.createPendingOrder({
   wallet: "Wunpaid", name: "Nobody", email: "nobody@example.test", x: null, tg: null, reference: "Runpaid"
 });
 var no = await sendConfirmation(unpaid);
 check("gets no pass", no.ok === false && no.reason === "NOT_PAID", no);
-check("and sends nothing", sent.length === 1, sent.length);
+var beforeUnpaid = sent.length;
+check("and sends nothing", sent.length === beforeUnpaid, sent.length);
 
 console.log("\nwhen the provider refuses");
 mailFail = true;
@@ -218,6 +247,9 @@ try {
   var row = listed.body.orders.filter(function (r) { return r.id === order.id; })[0];
   /* The counter's first question about a buyer with an empty phone. */
   check("the ledger says whether the pass was emailed", row && row.emailed === true, row && row.emailed);
+  /* The counter reads this row to know what to hand over; the workshop reads it
+     to know what to make. */
+  check("and what goes on the inner pocket", row && row.mark === true, row && row.mark);
 
   var before = sent.length;
   var rs = await call("POST", "/api/admin/email", { id: order.id });

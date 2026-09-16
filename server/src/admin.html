@@ -374,6 +374,17 @@ label{display:block;font-size:9.5px;letter-spacing:.28em;text-transform:uppercas
     askToCollect(o, btn);
   }
 
+  /* What gets made. Of everything on this row it is the only field that changes
+     the garment, so it is not buried in the email line — and "not asked" is
+     shown as its own state, in the accent, because an order taken before the
+     question existed needs someone to go and ask rather than a guess. */
+  function markCell(o) {
+    if (o.mark == null) {
+      return el("span", { style: "color:#9945FF", text: "inner pocket · not asked" });
+    }
+    return el("span", { text: "inner pocket · " + (o.mark ? "Solana mark" : "no mark") });
+  }
+
   /* The address, plus whether the confirmation actually reached it. A buyer who
      turns up with nothing on their phone is the case this line is here for: it
      says in one glance whether to resend or to look up the code by name.
@@ -416,6 +427,7 @@ label{display:block;font-size:9.5px;letter-spacing:.28em;text-transform:uppercas
     var who = el("div", { class: "who" }, [
       el("div", {}, [el("b", { text: o.name }), el("span", { class: "muted", text: o.x ? "  @" + o.x : "" })]),
       el("div", { class: "meta" }, [codeCell(o)]),
+      el("div", { class: "meta" }, [markCell(o)]),
       el("div", { class: "meta" }, [emailCell(o)]),
       el("div", { class: "meta" }, [walletCell(o)]),
       el("div", { class: "meta", text: (o.status === "paid" ? "paid " + when(o.paidAt) : when(o.createdAt)) }),

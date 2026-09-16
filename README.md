@@ -100,7 +100,7 @@ know from across a room:
 
 | | |
 | --- | --- |
-| **A sale** | piece number, name, handles, pickup code, the transaction |
+| **A sale** | piece number, name, handles, **the inner pocket**, pickup code, the transaction |
 | **A hand-over** | piece number, name, code, which wallet released it, how many are left |
 | **A payment after sell-out** | the wallet to refund, and the transaction |
 | **A restart** | how much is sold, so you know it came back up |
@@ -175,6 +175,27 @@ because the alternative — a buyer at a counter in a hall with no signal, asked
 connect a wallet — fails more often and more visibly. The mitigation is at the
 counter rather than in the mail: **staff ask for a name**, and a name is in the
 ledger while a passer-by holding a forwarded email does not have one.
+
+### The Solana mark
+
+The panel asks, at step three, whether the piece carries the mark on its inner
+pocket. That answer is the only thing a buyer chooses that changes the garment,
+so it is carried the whole way rather than left in the page: validated with the
+rest of the form, stored on the order, updated when a buyer reopens the modal
+and changes their mind, and then said back to them in the confirmation email,
+to you in the Telegram message, and on the `/admin` row.
+
+It has **three** states, not two. `1` chose it, `0` declined, and `NULL` was
+never asked — an order taken before the question existed. Collapsing null into
+"no" would quietly tell the workshop that an early buyer declined something
+nobody offered them, so an unasked order says **not asked**, in the accent, on
+the admin row and in the Telegram message. It is a question for someone to go
+and ask, not a default to cut against.
+
+The column arrives on an existing ledger through `ALTER TABLE` at boot, which is
+a path that can only ever run for real against a database with sales in it.
+`migrate.test.js` rehearses it: an old-schema file with a paid order, opened
+twice, asserting the order survives and its mark reads null rather than zero.
 
 ## How a payment actually works
 
@@ -415,6 +436,9 @@ session is not the same as holding an admin one.
 - `notify.test.js` — every Telegram message, against a local stand-in: what
   each one says, that a repeat scan sends nothing, and that a hand-over still
   completes when Telegram answers 500.
+- `migrate.test.js` — the `mark` column arriving on a ledger that already holds
+  a sale: that it boots, that the order survives, that an unasked order reads
+  null rather than zero, and that a second boot does not add the column twice.
 - `email.test.js` — the buyer's confirmation, against a stand-in Resend: what
   the payload carries, that the attachment is a real PNG referenced inline, that
   the QR encodes the same fragment the panel's does, that a second send is
