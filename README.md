@@ -313,6 +313,16 @@ gets shared too widely, rotate `SHEET_KEY` and `ADMIN_KEY` is unaffected.
 The sheet contains buyer names and email addresses — share it like a customer
 list, not a dashboard.
 
+### Cancelling an order
+
+    curl -X POST "https://breakpoint-kimono.vercel.app/api/cancel?key=<ADMIN_KEY>" \
+         -H 'Content-Type: application/json' -d '{"email":"buyer@example.com"}'
+
+Sets `status='cancelled'` rather than deleting: the piece number frees up for
+the next buyer — every partial index excludes cancelled rows — while the record
+of who held it survives. Add `"wave": 2` for a wave-two order. This is how the
+"cancel any time" promise on the page is actually honoured.
+
 ### Checking it works
 
     GET /api/health?key=<ADMIN_KEY>

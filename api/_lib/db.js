@@ -171,6 +171,17 @@ export async function selfTest() {
   };
 }
 
+/* Frees the piece without losing the record of who held it. The partial unique
+   indexes all exclude 'cancelled', so the number becomes claimable again. */
+export async function cancelOrder(email, wave = 1) {
+  const client = await sql();
+  if (!client) return [];
+  return client`
+    UPDATE orders SET status = 'cancelled'
+    WHERE wave = ${wave} AND lower(email) = lower(${email}) AND status <> 'cancelled'
+    RETURNING piece, name, email, x_handle`;
+}
+
 export async function addWaitlist({ name, email, x, tg }) {
   const client = await sql();
   if (!client) return { ok: false, reason: "not_configured" };
