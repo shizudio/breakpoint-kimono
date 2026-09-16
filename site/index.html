@@ -157,6 +157,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .field-err{margin:0;font-size:11.5px;line-height:1.6;opacity:.72}
 .field-hint{margin:2px 0 0;font-size:11.5px;line-height:1.7;opacity:.4}
 .soldout{margin:0;font-family:var(--ed);font-size:24px;font-style:italic;text-align:center;opacity:.72}
+.mark-shot{display:block;width:100%;height:auto;border:.5px solid var(--hair);background:var(--ground-alt)}
+.choice{display:flex;gap:12px}
+.choice button{flex:1;font-size:9.5px;font-weight:300;letter-spacing:.24em;text-transform:uppercase;padding:17px;border:1px solid var(--hair-strong);background:none;color:var(--ink);cursor:pointer;transition:border-color .2s,background .2s}
+.choice button:hover{border-color:var(--accent)}
+.choice button[disabled]{opacity:.5;cursor:default}
 
 /* modal */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
@@ -595,6 +600,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     sold: 0,
     buyers: [],              // [{ handle, piece }], newest first; handle may be null
     soldOut: false,
+    solanaMark: null,      // true | false — chosen at step three, no default
+    pendingDetails: null,  // held between the details form and the order POST
     presaleEndsAt: PRESALE_ENDS,
     presaleOver: false,
     priceUsdc: 300,
@@ -1196,7 +1203,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     var notice;
 
     if (state.modal === "wallet") {
-      panel.appendChild(eyebrow("Step one of three"));
+      panel.appendChild(eyebrow("Step one of four"));
       panel.appendChild(title("Connect a wallet"));
       panel.appendChild(el("p", { class: "footnote", text: "You will sign a message to prove the wallet is yours. No payment is approved here." }));
       WALLETS.forEach(function (w) {
@@ -1222,7 +1229,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       panel.appendChild(ghostClose());
 
     } else if (state.modal === "details") {
-      panel.appendChild(eyebrow("Step two of three"));
+      panel.appendChild(eyebrow("Step two of four"));
       panel.appendChild(title("Your details"));
       var chip = walletChip();
       if (chip) panel.appendChild(chip);
@@ -1242,10 +1249,37 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       }
       panel.appendChild(panelFoot());
 
+    } else if (state.modal === "mark") {
+      panel.appendChild(eyebrow("Step three of four"));
+      panel.appendChild(title("The Solana mark"));
+      panel.appendChild(el("img", {
+        class: "mark-shot", src: "/web/pocket-mark.jpg", width: "900", height: "600",
+        alt: "The inner pocket with the Solana mark embroidered in tonal thread"
+      }));
+      panel.appendChild(el("p", {
+        class: "footnote",
+        text: "Embroidered on the inner pocket in tonal thread. Yours either way — this only decides whether the mark goes on."
+      }));
+      var markRow = el("div", { class: "choice" });
+      [["Yes", true], ["No", false]].forEach(function (opt) {
+        var b = el("button", { type: "button", text: opt[0], disabled: state.busy ? "" : null });
+        b.addEventListener("click", function () {
+          state.solanaMark = opt[1];
+          placeOrder();   // the choice and the piece are taken together
+        });
+        markRow.appendChild(b);
+      });
+      panel.appendChild(markRow);
+      if ((notice = noticeNode())) panel.appendChild(notice);
+
     } else if (state.modal === "pay" || state.modal === "paying") {
-      panel.appendChild(eyebrow("Step three of three"));
+      panel.appendChild(eyebrow("Step four of four"));
       panel.appendChild(title("Pay " + state.priceUsdc + " USDC"));
 
+      if (state.solanaMark !== null) panel.appendChild(el("p", {
+        class: "footnote",
+        text: state.solanaMark ? "Solana mark on the inner pocket." : "No mark on the inner pocket."
+      }));
       panel.appendChild(el("div", { class: "pay-sum" }, [
         el("span", { class: "amt", text: state.priceUsdc + " USDC" }),
         el("span", { class: "who", text: (state.walletName || "Your wallet") + "\n" + (state.wallet || "").slice(0, 4) + "…" + (state.wallet || "").slice(-4) })
@@ -1466,14 +1500,25 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     field("fX").value = v.x;
     field("fTg").value = v.tg;
 
-    /* This is where a piece is actually taken off the board. The server checks
-       the cap, writes a pending order against the signed-in wallet and builds
-       the transaction; the hold lapses on its own if the payment never comes. */
-    state.busy = true;
-    submitBtn.disabled = true;
-    setNotice("busy", "Holding a piece for you…");
+    /* The mark is a manufacturing instruction, so it has to be settled before a
+       piece comes off the board — not after. Hold the details and ask. */
+    state.pendingDetails = v;
+    setNotice("", "");
+    setModal("mark");
+  });
 
-    api("POST", "/api/orders", v)
+  /* This is where a piece is actually taken off the board. The server checks
+     the cap, writes a pending order against the signed-in wallet and builds
+     the transaction; the hold lapses on its own if the payment never comes. */
+  function placeOrder() {
+    var v = state.pendingDetails;
+    if (!v || state.busy) return;
+    state.busy = true;
+    if (submitBtn) submitBtn.disabled = true;
+    setNotice("busy", "Holding a piece for you…");
+    renderModal();
+
+    api("POST", "/api/orders", Object.assign({}, v, { mark: state.solanaMark }))
       .then(function (out) {
         state.busy = false;
         submitBtn.disabled = false;
@@ -1494,6 +1539,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         }
         if (err.fields) {
           // The server's own validation, shown on the same fields as ours.
+          setModal("details");
           showErrors(err.fields);
           setNotice("warn", err.message);
           return;
@@ -1501,7 +1547,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         if (err.code === "SOLD_OUT" || err.code === "PRESALE_OVER") loadState();
         setNotice("warn", err.message);
       });
-  });
+  }
 
   /* ---------- turntable: scroll lock + scrub ---------- */
   var img = $("#turntable");

@@ -179,15 +179,26 @@ try {
   form.querySelector("#fTg").value = "@shizudio";
   form.dispatchEvent(new win.Event("submit", { bubbles: true, cancelable: true }));
 
+  console.log("\nstep three — the Solana mark");
+  await waitFor(function () { return /The Solana mark/.test(panelText()); }, "the mark step");
+  check("the reference photo is shown", !!panel().querySelector(".mark-shot"));
+  check("both answers are offered", panel().querySelectorAll(".choice button").length === 2);
+  /* The mark is a manufacturing instruction, so it has to be settled before a
+     piece leaves the board — not after. */
+  var pre = await (await fetch(BASE + "/api/state")).json();
+  check("no piece is held until the mark is answered", pre.taken === 0, pre);
+  byText("button", /^Yes$/).dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+
   await waitFor(function () { return /Pay 300 USDC/.test(panelText()); }, "the pay step");
   check("a pasted profile URL was normalised in place", form.querySelector("#fX").value === "shizudio", form.querySelector("#fX").value);
   var st = await (await fetch(BASE + "/api/state")).json();
   check("the piece is now held server-side", st.taken === 1 && st.sold === 0, st);
 
-  console.log("\nstep three — pay");
+  console.log("\nstep four — pay");
   check("the amount is shown", /300 USDC/.test(panelText()));
   check("the short balance is called out", /Top it up/.test(panelText()), panelText().slice(0, 200));
   check("the hold time is shown", /held until/.test(panelText()));
+  check("the mark choice is restated before paying", /Solana mark on the inner pocket/.test(panelText()));
 
   byText("button", /^Pay 300 USDC$/).dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
   await waitFor(function () { return walletCalls.send === 1; }, "the wallet to be asked to send");
