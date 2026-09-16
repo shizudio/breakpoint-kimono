@@ -6,6 +6,8 @@ export default async function handler(req, res) {
 
   const raw = readBody(req);
   const wave = Number(raw.wave) === 2 ? 2 : 1;
+  // null when unanswered, so an unchosen mark is distinguishable from a declined one
+  const mark = raw.mark === true ? true : raw.mark === false ? false : null;
   const { value, errors } = clean(raw);
   if (errors.length) return res.status(400).json({ error: "invalid", fields: errors });
 
@@ -15,7 +17,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const result = await claimPiece({ ...value, wave });
+    const result = await claimPiece({ ...value, wave, mark });
     // Only wave one can sell out; wave two is confirmed by volume, not capped.
     if (!result.ok && result.reason === "sold_out") {
       return res.status(409).json({ error: "sold_out" });

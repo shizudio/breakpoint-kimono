@@ -174,6 +174,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .wallet-btn:hover{border-color:var(--accent)}
 .card-frame{border:.5px solid var(--hair)}
 .card-art{display:block;width:100%;height:auto;background:var(--ground-alt)}
+.mark-shot{display:block;width:100%;height:auto;border:.5px solid var(--hair);background:var(--ground-alt)}
+.choice{display:flex;gap:12px}
+.choice button{flex:1;font-size:9.5px;font-weight:300;letter-spacing:.24em;text-transform:uppercase;padding:17px;border:1px solid var(--hair-strong);background:none;color:var(--ink);cursor:pointer;transition:border-color .2s,background .2s}
+.choice button:hover{border-color:var(--accent)}
+.choice button.picked{border-color:var(--accent);background:var(--accent)}
 .card-meta{padding:13px 16px;border-top:.5px solid var(--hair);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .card-meta .lbl{font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4}
 .card-meta .who{font-size:11px;letter-spacing:.06em;opacity:.72}
@@ -460,6 +465,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     intent: "order",   // "order" (wave 1) | "wave2" (pay now) | "notify" (email only)
     alreadyPiece: 0,
     myPiece: 0,
+    solanaMark: null,   // true | false — chosen at step two, no default
     faqOpen: 0
   };
   var lastOrder = null;
@@ -695,7 +701,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
   function finish() {
     if (state.intent === "wave2") {
-      postJSON("/api/order", Object.assign({ wave: 2 }, lastOrder || {}));
+      postJSON("/api/order", Object.assign({ wave: 2, mark: state.solanaMark }, lastOrder || {}));
       setModal("wave2done");
       return;
     }
@@ -706,7 +712,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     /* The server owns the cap. It claims the lowest free piece in one statement,
        so two people pressing pay at once cannot take the same one — and if it
        says sold out, we believe it over our own count. */
-    postJSON("/api/order", lastOrder || {}).then(function (r) {
+    postJSON("/api/order", Object.assign({ mark: state.solanaMark }, lastOrder || {})).then(function (r) {
       if (r && r.status === 409) { refresh().then(function () { setModal("gone"); }); return; }
       if (r && r.ok) {
         r.json().then(function (d) { if (d && d.piece) state.myPiece = d.piece; }).catch(function () {});
@@ -758,6 +764,29 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       orderForm.hidden = false;
       panel.appendChild(orderForm);
 
+    } else if (state.modal === "mark") {
+      panel.appendChild(eyebrow("Step two"));
+      panel.appendChild(title("The Solana mark"));
+      panel.appendChild(el("img", {
+        class: "mark-shot", src: "web/pocket-mark.jpg", width: "900", height: "600",
+        alt: "The inner pocket with the Solana mark embroidered in tonal thread"
+      }));
+      panel.appendChild(el("p", {
+        class: "footnote",
+        text: "Embroidered on the inner pocket in tonal thread. Yours either way — this only decides whether the mark goes on."
+      }));
+      var row = el("div", { class: "choice" });
+      [["Yes", true], ["No", false]].forEach(function (opt) {
+        var b = el("button", { type: "button", text: opt[0] });
+        if (state.solanaMark === opt[1]) b.classList.add("picked");
+        b.addEventListener("click", function () {
+          state.solanaMark = opt[1];
+          setModal("wallet");
+        });
+        row.appendChild(b);
+      });
+      panel.appendChild(row);
+
     } else if (state.modal === "gone") {
       // The last piece went while they were filling the form. Their details are
       // already typed — do not make them start again.
@@ -768,7 +797,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         text: "Someone took the fifteenth while you were filling this in. Your details are still here — carry them into wave two, which we cut once enough orders come in. If it does not go ahead, your payment is returned in full."
       }));
       var toWave2 = el("button", { class: "btn-invert", type: "button", text: "Join wave two · $300" });
-      toWave2.addEventListener("click", function () { state.intent = "wave2"; setModal("wallet"); });
+      toWave2.addEventListener("click", function () { state.intent = "wave2"; setModal("mark"); });
       panel.appendChild(toWave2);
       var notifyInstead = el("button", { class: "btn-ghost", type: "button", text: "Just email me updates" });
       notifyInstead.addEventListener("click", function () { submitWaitlist(lastOrder); });
@@ -814,7 +843,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       panel.appendChild(ghostClose());
 
     } else if (state.modal === "wallet") {
-      panel.appendChild(eyebrow("Step two"));
+      panel.appendChild(eyebrow("Step three"));
       panel.appendChild(title("Connect a wallet"));
       WALLETS.forEach(function (w) {
         var b = el("button", { class: "wallet-btn", type: "button" }, [
@@ -830,7 +859,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       panel.appendChild(noWallet);
 
     } else if (state.modal === "pay") {
-      panel.appendChild(eyebrow("Step three"));
+      panel.appendChild(eyebrow("Step four"));
       panel.appendChild(title("Pay 300"));
       panel.appendChild(el("div", { style: "font-size:11.5px;opacity:.5", text: state.wallet + " · 7xKp…3rQm" }));
       var pays = el("div", { style: "display:flex;gap:12px" });
@@ -841,12 +870,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       });
       panel.appendChild(pays);
       // The X handle already came from step one — no need to ask twice.
-      if (lastOrder && lastOrder.x) {
-        panel.appendChild(el("p", {
-          class: "footnote",
-          text: "Your order card will be made out to @" + lastOrder.x + "."
-        }));
-      }
+      var lines = [];
+      if (lastOrder && lastOrder.x) lines.push("Order card made out to @" + lastOrder.x + ".");
+      lines.push(state.solanaMark ? "Solana mark on the inner pocket." : "No mark on the inner pocket.");
+      panel.appendChild(el("p", { class: "footnote", text: lines.join(" ") }));
 
     } else if (state.modal === "done") {
       var shownHandle = lastOrder && lastOrder.x ? "@" + lastOrder.x : "@you";
@@ -999,7 +1026,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     if (state.intent === "notify") { submitWaitlist(v); return; }
 
     // Wave two is not capped at fifteen, so none of the wave-one gates apply.
-    if (state.intent === "wave2") { setModal("wallet"); return; }
+    if (state.intent === "wave2") { setModal("mark"); return; }
 
     // Scenario D — they already hold a piece.
     var held = v.x && alreadyIn(v.x);
@@ -1008,7 +1035,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     // Scenario B — the run filled while this form was being typed.
     if (isSoldOut()) { setModal("gone"); return; }
 
-    setModal("wallet");
+    setModal("mark");
   });
 
   /* The page must stay usable whether or not the API is reachable, so these are

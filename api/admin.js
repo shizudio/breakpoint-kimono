@@ -17,11 +17,11 @@ export default async function handler(req, res) {
 
     if ((req.query && req.query.format) === "csv") {
       const esc = (v) => '"' + String(v == null ? "" : v).replace(/"/g, '""') + '"';
-      const lines = ["list,wave,piece,status,name,email,x,telegram,created_at"];
+      const lines = ["list,wave,piece,status,solana_mark,name,email,x,telegram,created_at"];
       orders.forEach((o) => lines.push(
-        ["order", o.wave, o.piece, o.status, o.name, o.email, o.x_handle, o.tg_handle, o.created_at].map(esc).join(",")));
+        ["order", o.wave, o.piece, o.status, o.solana_mark, o.name, o.email, o.x_handle, o.tg_handle, o.created_at].map(esc).join(",")));
       waitlist.forEach((w) => lines.push(
-        ["notify", "", "", "", w.name, w.email, w.x_handle, w.tg_handle, w.created_at].map(esc).join(",")));
+        ["notify", "", "", "", "", w.name, w.email, w.x_handle, w.tg_handle, w.created_at].map(esc).join(",")));
       res.setHeader("Content-Type", "text/csv; charset=utf-8");
       res.setHeader("Content-Disposition", 'attachment; filename="breakpoint-kimono.csv"');
       return res.status(200).send(lines.join("\n"));

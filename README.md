@@ -112,10 +112,15 @@ turntable's height budget. Hero integrity holds from 900px down to 480px.
 Both CTAs open one modal, in order:
 
 1. **Your details** — the form (name, email, X, Telegram). Validation blocks here.
-2. **Connect a wallet** — Phantom · Solflare · Backpack, plus an "I cannot use a
+2. **The Solana mark** — yes/no on the inner-pocket embroidery, over a reference
+   photo. No default: `state.solanaMark` starts null and neither option is
+   preselected, so an unanswered choice is never mistaken for a declined one —
+   the column is nullable for the same reason.
+3. **Connect a wallet** — Phantom · Solflare · Backpack, plus an "I cannot use a
    wallet" escape that ends at the confirmation with payment details by email.
-3. **Pay 300** — USDC or USDT.
-4. **Reserved** — the order card, made out to the X handle from step one.
+4. **Pay 300** — USDC or USDT. The summary line restates the handle and the mark
+   so both can be corrected before paying.
+5. **Reserved** — the order card, made out to the X handle from step one.
 
 The details step adopts the `<form>` out of `#formHolder` rather than rebuilding
 it, so its validation wiring survives every re-render of the panel. The pay step
@@ -271,8 +276,9 @@ session does can reach a real buyer list or the waitlist.
 Two tables, both holding the same four fields so a waitlist entry can be
 promoted into an order without reshaping anything:
 
-- **`orders`** — `piece` (1–15, unique), name, email, X, Telegram, status,
-  wallet, tx, created_at
+- **`orders`** — `wave`, `piece` (unique per wave), name, email, X, Telegram,
+  status, `solana_mark` (nullable: true / false / unanswered), wallet, tx,
+  created_at
 - **`waitlist`** — name, email, X, Telegram, created_at
 
 `POST /api/order` claims **the lowest free piece in a single statement**, so two

@@ -29,6 +29,7 @@ async function sql() {
           x_handle    text,
           tg_handle   text,
           status      text NOT NULL DEFAULT 'reserved',
+          solana_mark boolean,
           wallet      text,
           tx          text,
           created_at  timestamptz NOT NULL DEFAULT now()
@@ -44,6 +45,7 @@ async function sql() {
         )`;
       // Existing rows predate the column; default them to wave one.
       await client`ALTER TABLE orders ADD COLUMN IF NOT EXISTS wave integer NOT NULL DEFAULT 1`;
+      await client`ALTER TABLE orders ADD COLUMN IF NOT EXISTS solana_mark boolean`;
       // Piece numbers are unique within a wave, not across the whole table.
       await client`
         CREATE UNIQUE INDEX IF NOT EXISTS orders_wave_piece
@@ -67,10 +69,10 @@ export async function listOrders(wave = null) {
   const client = await sql();
   if (!client) return [];
   if (wave === null) {
-    return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, created_at
+    return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, solana_mark, created_at
                   FROM orders WHERE status <> 'cancelled' ORDER BY wave ASC, piece ASC`;
   }
-  return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, created_at
+  return client`SELECT wave, piece, name, email, x_handle, tg_handle, status, solana_mark, created_at
                 FROM orders WHERE status <> 'cancelled' AND wave = ${wave} ORDER BY piece ASC`;
 }
 
@@ -89,7 +91,7 @@ export async function listWaitlist() {
    capped by it — so its orders simply take the next number and never sell out.
    Wave-two rows are held as 'pending_wave' until the run is confirmed, which is
    what the refund promise on the page is anchored to. */
-export async function claimPiece({ name, email, x, tg, wallet, tx, wave = 1 }) {
+export async function claimPiece({ name, email, x, tg, wallet, tx, wave = 1, mark = null }) {
   const client = await sql();
   if (!client) return { ok: false, reason: "not_configured" };
   const w = wave === 2 ? 2 : 1;
@@ -101,18 +103,18 @@ export async function claimPiece({ name, email, x, tg, wallet, tx, wave = 1 }) {
 
   if (w === 2) {
     const rows = await client`
-      INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx, status)
+      INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx, status, solana_mark)
       SELECT 2,
              COALESCE((SELECT MAX(piece) FROM orders WHERE wave = 2 AND status <> 'cancelled'), 0) + 1,
              ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null},
-             'pending_wave'
+             'pending_wave', ${mark}
       RETURNING piece`;
     return { ok: true, piece: rows[0].piece, wave: 2 };
   }
 
   const rows = await client`
-    INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx)
-    SELECT 1, gs, ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null}
+    INSERT INTO orders (wave, piece, name, email, x_handle, tg_handle, wallet, tx, solana_mark)
+    SELECT 1, gs, ${name}, ${email}, ${x || null}, ${tg || null}, ${wallet || null}, ${tx || null}, ${mark}
     FROM generate_series(1, ${PIECES}) AS gs
     WHERE NOT EXISTS (
       SELECT 1 FROM orders o WHERE o.wave = 1 AND o.piece = gs AND o.status <> 'cancelled')
