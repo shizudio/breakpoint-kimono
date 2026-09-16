@@ -245,6 +245,7 @@ try {
 
   doc.querySelector(".cta").dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
   await waitFor(function () { return /is yours/.test(panelText()); }, "the confirmation panel");
+
   check("a paid wallet gets its pass back, not the order form", !/Your details/.test(panelText()));
 
   var code = store2Code();
@@ -269,6 +270,14 @@ try {
   await waitFor(function () { return /is yours/.test(panelText()); }, "the panel again");
   check("reopening starts masked again", panelText().indexOf(code) === -1, panelText().slice(0, 160));
 
+  console.log("\nsave as PDF");
+  var printed = 0; win.print = function () { printed++; };
+  check("a Save as PDF button is offered with the pass", !!byText("button", /^Save as PDF$/));
+  byText("button", /^Save as PDF$/).dispatchEvent(new win.MouseEvent("click", { bubbles: true }));
+  await waitFor(function () { return printed === 1; }, "the print dialog");
+  check("the print dialog was opened", printed === 1);
+  check("the code was revealed first, not printed masked", !panel().querySelector(".code.masked"));
+  check("the QR had arrived before printing", !!panel().querySelector(".pass .qr svg"));
   console.log("\nreturning buyer");
   /* Reconnecting the same wallet is the only way back to an order. There is no
      link, and no code, that shows it to anyone else. */

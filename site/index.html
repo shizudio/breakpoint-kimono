@@ -214,6 +214,28 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .ordrow span:first-child{opacity:.45;letter-spacing:.06em;flex:none}
 .ordrow span:last-child{text-align:right;word-break:break-word}
 @media (max-width:420px){ .pass{flex-direction:column;align-items:flex-start;gap:14px} }
+/* "Save as PDF" is the print dialog. On paper the pass is the whole page: white
+   ground, black ink, the code and the QR, the piece number and where to collect.
+   Everything that is a screen affordance — the turntable, the card art, the
+   share button, the toggle that masks the code — is hidden, not restyled. */
+@media print{
+  body{background:#fff!important;color:#000!important;display:block!important;padding:0!important}
+  body > *:not(#modal){display:none!important}
+  #modal{position:static!important;background:none!important;padding:0!important;display:block!important}
+  #modal[hidden]{display:none!important}
+  .panel{width:auto!important;max-width:520px;margin:0;border:0!important;box-shadow:none!important;
+         max-height:none!important;overflow:visible!important;background:none!important;color:#000!important;padding:0!important}
+  .panel .eyebrow{color:#000!important;opacity:.55}
+  .panel .card-frame,.panel .btn-invert,.panel .btn-ghost,.panel .panel-foot,.panel .reveal,
+  .panel .pdf-save,.panel .notice,.panel .wallet-chip{display:none!important}
+  .pass{border-color:#000!important}
+  .pass .qr{background:#fff!important;padding:0!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .code.masked{opacity:1!important}
+  .keepsafe{border-left-color:#000!important;opacity:1!important}
+  .ordrow{border-bottom-color:#000!important}
+  .ordrow span:first-child{opacity:.55!important}
+  .ordrow a{color:#000!important;text-decoration:none}
+}
 @media (max-height:760px){ .panel{padding:clamp(18px,3vw,24px);gap:14px} }
 /* An iPhone SE is 667px tall, and the confirmation is the one panel that should
    not need scrolling — it is what someone holds up at a counter. Give it the
@@ -1147,6 +1169,21 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
      Staff asking for a name is a genuine second check: it is in the ledger and
      a passer-by does not have it. */
 
+  /* The print dialog is where every browser keeps "Save as PDF", so that is the
+     button — no library, and no file of ours ever holds the pickup code. The code
+     has to be out and the QR fetched before the dialog opens, or the PDF carries
+     the mask and an empty box. */
+  function savePassAsPdf() {
+    if (!state.codeShown) { state.codeShown = true; renderModal(); }
+    var needsQr = !!(state.order && state.order.qrUrl);
+    var until = Date.now() + 4000;
+    (function whenReady() {
+      var ok = !needsQr || !!panel.querySelector(".pass .qr svg");
+      if (ok || Date.now() > until) { window.print(); return; }
+      setTimeout(whenReady, 60);
+    })();
+  }
+
   function pickupBlock(o) {
     var shown = state.codeShown;
     var qrBox = el("div", { class: "qr" });
@@ -1346,7 +1383,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         ])
       ]));
 
-      if (o.pickupCode) panel.appendChild(pickupBlock(o));
+      if (o.pickupCode) {
+        panel.appendChild(pickupBlock(o));
+        var save = el("button", { class: "btn-outline pdf-save", type: "button", text: "Save as PDF" });
+        save.addEventListener("click", savePassAsPdf);
+        panel.appendChild(save);
+      }
 
       /* Two rows, not three. The amount and the link to it are one fact, and
          the panel was tall enough to need scrolling on any laptop under 900px.
