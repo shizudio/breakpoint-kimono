@@ -80,6 +80,7 @@ img{display:block}
 .count-row .n{font-family:var(--ed);font-size:20px;letter-spacing:0;font-style:italic}
 .bar{height:8px;width:100%;background:rgba(247,244,238,.14);overflow:hidden}
 .bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2));width:0;transition:width .9s cubic-bezier(.25,.46,.45,.94)}
+.bar>i.full{background:var(--accent2)}
 .proof{display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
 .bubbles{display:flex}
 .bubble img,.lb .av img{width:100%;height:100%;object-fit:cover;border-radius:50%}
@@ -238,7 +239,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     <div class="preview-bar">Preview · payments are not live</div>
     <header class="hero-top">
       <div class="stack">
-        <span style="opacity:.5">Presale closes in</span>
+        <span style="opacity:.5" id="clockLabel">Presale closes in</span>
         <span id="countdown">—</span>
       </div>
     </header>
@@ -357,7 +358,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
         <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the form nor the wallet is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
       </div>
-      <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
+      <div id="soldOut" hidden style="display:flex;flex-direction:column;gap:20px">
+        <p class="soldout" style="margin:0">All fifteen are accounted for.</p>
+        <button class="btn-outline" data-open-waitlist style="width:100%">Join the waitlist</button>
+        <p class="footnote" style="text-align:center">We cut a second wave when this one ships. Waitlist goes first.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -386,7 +391,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
           </div>
           <p class="field-hint">X and Telegram are optional — we use them for your order card and to reach you faster.</p>
           <button class="btn-outline" type="submit">Continue to payment</button>
-          <p class="footnote">We only use these to confirm your piece and to reach you about this order.</p>
+          <p class="footnote">We only use these to confirm your piece and to reach you about this order. Cancel any time by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> — if your piece has not shipped, we refund it in full.</p>
         </form>
 </div>
 
@@ -442,11 +447,26 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     buyers: ["shizudio", "gizmothegizzer"],
     modal: null,
     wallet: null,
+    intent: "order",   // "order" | "waitlist"
+    alreadyPiece: 0,
+    myPiece: 0,
     faqOpen: 0
   };
   var lastOrder = null;
 
-  var count = function () { return Math.min(15, state.buyers.length); };
+  var PIECES = 15;
+  var count = function () { return Math.min(PIECES, state.buyers.length); };
+  /* The single capacity gate. Checked on CTA click, on form submit and again at
+     pay — the last piece can go while someone is still filling the form, and
+     trusting an earlier check is how a run of fifteen sells sixteen. */
+  var isSoldOut = function () { return state.buyers.length >= PIECES; };
+  var alreadyIn = function (h) {
+    h = (h || "").toLowerCase();
+    for (var i = 0; i < state.buyers.length; i++) {
+      if (state.buyers[i].toLowerCase() === h) return i + 1;
+    }
+    return 0;
+  };
 
   var $ = function (sel) { return document.querySelector(sel); };
   var esc = function (t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; };
@@ -465,6 +485,13 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   /* ---------- countdown ---------- */
   function pad(n) { return String(n).padStart(2, "0"); }
   function tickClock() {
+    if (isSoldOut()) {
+      $("#clockLabel").textContent = "Wave 2 is cooking";
+      $("#countdown").hidden = true;
+      return;
+    }
+    $("#clockLabel").textContent = "Presale closes in";
+    $("#countdown").hidden = false;
     var left = Math.max(0, PRESALE_ENDS - Date.now());
     var d = Math.floor(left / 86400000),
         h = Math.floor(left / 3600000) % 24,
@@ -510,9 +537,19 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     var more = Math.max(0, c - shown.length);
     $("#proofText").textContent = proofLine(shown, more);
 
-    var sold = c >= 15;
+    var sold = isSoldOut();
     $("#orderLive").hidden = sold;
     $("#soldOut").hidden = !sold;
+    $("#fill").classList.toggle("full", sold);
+
+    // The hero CTA is the main conversion path; when the run is gone it has to
+    // stop offering a piece, or it promises something we cannot deliver.
+    var cta = $(".cta");
+    if (cta) {
+      cta.textContent = sold ? "Join the waitlist" : "Reserve yours at $300";
+      cta.setAttribute("data-mode", sold ? "waitlist" : "order");
+    }
+    tickClock();
   }
 
   function renderLeaderboard() {
@@ -605,7 +642,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
     { q: "How does paying with USDC or USDT work?", a: "Connect a Solana wallet, approve a single 300 transfer to the studio address, and your piece is held against that transaction. No mint, no token, no secondary anything." },
     { q: "What if I cannot use a wallet?", a: "Use the order form. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
-    { q: "Can I get a refund?", a: "Until we cut your piece, yes — write to us and we return the full amount. Once it is on the table it belongs to you." }
+    { q: "Can I cancel or get a refund?", a: "Yes. Write to @shizudio any time and we cancel the order. As long as your piece has not shipped, we refund it in full." }
   ];
   function renderFaq() {
     var wrap = $("#faq");
@@ -647,11 +684,38 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   function finish() {
+    // Client-side gate first, so the common case never round-trips.
+    if (isSoldOut()) { setModal("gone"); return; }
     var handle = (lastOrder && lastOrder.x) || "anon";
-    state.buyers = [handle].concat(state.buyers);
-    renderReserve();
-    renderLeaderboard();
-    setModal("done");
+
+    /* The server owns the cap. It claims the lowest free piece in one statement,
+       so two people pressing pay at once cannot take the same one — and if it
+       says sold out, we believe it over our own count. */
+    postJSON("/api/order", lastOrder || {}).then(function (r) {
+      if (r && r.status === 409) { refresh().then(function () { setModal("gone"); }); return; }
+      if (r && r.ok) {
+        r.json().then(function (d) { if (d && d.piece) state.myPiece = d.piece; }).catch(function () {});
+      }
+      state.buyers = [handle].concat(state.buyers);
+      renderReserve();
+      renderLeaderboard();
+      setModal("done");
+    });
+  }
+
+  /* Pull the live list so the bar, ledger and sold-out state reflect what the
+     database actually holds rather than what this tab last saw. Falls back to
+     the built-in list when storage is not configured yet. */
+  function refresh() {
+    return fetch("/api/reservations", { cache: "no-store" })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!d || !d.configured || !Array.isArray(d.buyers)) return;
+        state.buyers = d.buyers.map(function (b) { return b.handle || "anon"; });
+        renderReserve();
+        renderLeaderboard();
+      })
+      .catch(function () {});
   }
 
   function renderModal() {
@@ -660,12 +724,52 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     panel.textContent = "";
 
     if (state.modal === "details") {
-      panel.appendChild(eyebrow("Step one"));
-      panel.appendChild(title("Your details"));
+      var wait = state.intent === "waitlist";
+      panel.appendChild(eyebrow(wait ? "Waitlist" : "Step one"));
+      panel.appendChild(title(wait ? "Join the waitlist" : "Your details"));
+      if (wait) panel.appendChild(el("p", {
+        class: "footnote",
+        text: "All fifteen are reserved. Leave your details and you go first when we cut the next wave."
+      }));
+      orderForm.querySelector(".btn-outline").textContent = wait ? "Join the waitlist" : "Continue to payment";
       // The form lives in #formHolder and is adopted by the panel, so its
       // validation wiring survives every re-render.
       orderForm.hidden = false;
       panel.appendChild(orderForm);
+
+    } else if (state.modal === "gone") {
+      // The last piece went while they were filling the form. Their details are
+      // already typed — do not make them start again.
+      panel.appendChild(eyebrow("Just missed it"));
+      panel.appendChild(title("The last piece just went."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        text: "Someone took the fifteenth while you were filling this in. Your details are still here — put them on the waitlist and you go first when we cut the next wave."
+      }));
+      var join = el("button", { class: "btn-invert", type: "button", text: "Join the waitlist" });
+      join.addEventListener("click", function () { submitWaitlist(lastOrder); });
+      panel.appendChild(join);
+      panel.appendChild(ghostClose());
+
+    } else if (state.modal === "already") {
+      panel.appendChild(eyebrow("Already yours"));
+      panel.appendChild(title("You are in the run."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        html: "You hold piece " + state.alreadyPiece + " of 15. To change or cancel it, write to " +
+              '<a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.'
+      }));
+      panel.appendChild(ghostClose());
+
+    } else if (state.modal === "waitlisted") {
+      panel.appendChild(eyebrow("On the list"));
+      panel.appendChild(title("You are on the waitlist."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        html: "We write to you before the next wave goes out. Nothing is charged today. Questions → " +
+              '<a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
+      }));
+      panel.appendChild(ghostClose());
 
     } else if (state.modal === "wallet") {
       panel.appendChild(eyebrow("Step two"));
@@ -715,7 +819,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         }),
         el("div", { class: "card-meta" }, [
           el("span", { class: "lbl", text: "Your order card" }),
-          el("span", { class: "who", text: shownHandle + " · piece " + count() + " of 15" })
+          el("span", { class: "who", text: shownHandle + " · piece " + (state.myPiece || count()) + " of 15" })
         ])
       ]));
       var post = el("button", { class: "btn-invert", type: "button", text: "Post on X" });
@@ -726,6 +830,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         window.open("https://x.com/intent/tweet?text=" + encodeURIComponent(msg) +
                     "&url=" + encodeURIComponent(SHARE_URL), "_blank");
       });
+      panel.appendChild(el("p", {
+        class: "footnote",
+        html: 'Cancel any time by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>. ' +
+              'If your piece has not shipped, we refund it in full.'
+      }));
       panel.appendChild(el("p", {
         class: "preview-note",
         text: "This is a preview of the presale. No payment was taken and no piece is held — write to @shizudio to reserve one."
@@ -752,7 +861,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
-    b.addEventListener("click", function () { setModal("details"); });
+    b.addEventListener("click", function () {
+      state.intent = isSoldOut() ? "waitlist" : "order";
+      setModal("details");
+    });
   });
 
   /* ---------- order form ---------- */
@@ -820,6 +932,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     ["name", "email", "x", "tg"].forEach(function (k) { setError(k, errs[k] || ""); });
   }
 
+  Array.prototype.forEach.call(document.querySelectorAll("[data-open-waitlist]"), function (b) {
+    b.addEventListener("click", function () { state.intent = "waitlist"; setModal("details"); });
+  });
+
   orderForm.addEventListener("submit", function (e) {
     e.preventDefault();
     var v = readForm();
@@ -833,11 +949,36 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     showErrors({});
     $("#fX").value = v.x;
     $("#fTg").value = v.tg;
-    /* No backend yet. The order is not recorded anywhere — see README. When the
-       reservation API lands, POST { name, x, tg } here and only then advance. */
     lastOrder = v;
+
+    if (state.intent === "waitlist") { submitWaitlist(v); return; }
+
+    // Scenario D — they already hold a piece.
+    var held = v.x && alreadyIn(v.x);
+    if (held) { state.alreadyPiece = held; setModal("already"); return; }
+
+    // Scenario B — the run filled while this form was being typed.
+    if (isSoldOut()) { setModal("gone"); return; }
+
     setModal("wallet");
   });
+
+  /* The page must stay usable whether or not the API is reachable, so these are
+     fire-and-forget: a failed write is logged, never shown as a dead end. */
+  function postJSON(url, body) {
+    try {
+      return fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body)
+      }).catch(function (e) { console.warn("post failed", url, e); return null; });
+    } catch (e) { console.warn("post threw", url, e); return Promise.resolve(null); }
+  }
+
+  function submitWaitlist(v) {
+    postJSON("/api/waitlist", v || lastOrder || {});
+    setModal("waitlisted");
+  }
 
   /* ---------- turntable: scroll lock + scrub ---------- */
   var img = $("#turntable");
@@ -975,6 +1116,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   /* ---------- go ---------- */
   renderReserve();
   renderLeaderboard();
+  refresh();
   renderMarquee();
   renderFaq();
   startMarquee();

@@ -235,3 +235,43 @@ master to `video_new.mp4`.
 To swap the video: extract into `site/frames-<next>/`, then update all three of
 `FRAMES_DIR` in the script, the hero `<img src>`, and the `headers` source in
 `vercel.json`. The script comment next to `FRAMES_DIR` says the same.
+
+## Database
+
+Two tables, both holding the same four fields so a waitlist entry can be
+promoted into an order without reshaping anything:
+
+- **`orders`** — `piece` (1–15, unique), name, email, X, Telegram, status,
+  wallet, tx, created_at
+- **`waitlist`** — name, email, X, Telegram, created_at
+
+`POST /api/order` claims **the lowest free piece in a single statement**, so two
+people pressing pay at once cannot be handed the same number. This is the real
+cap; the bar and counter in the page are display only. It returns `409 sold_out`
+when the run is gone, and the client believes the server over its own count.
+A unique index on `lower(email)` for live orders means a double submit cannot
+take two pieces.
+
+`POST /api/waitlist` is the same shape, de-duplicated by email.
+`GET /api/reservations` is what the page reads on load — public, so it returns
+handles and piece numbers only, never a name or an email address.
+
+### Your view of it
+
+    GET /api/admin?key=<ADMIN_KEY>              both tables as JSON
+    GET /api/admin?key=<ADMIN_KEY>&format=csv   a spreadsheet
+
+This one returns names and email addresses, so it refuses to answer unless
+`ADMIN_KEY` is set and matches.
+
+### Setup — two things in the Vercel dashboard
+
+1. **Storage → create a Postgres (Neon) database → connect it to this project.**
+   Vercel injects `DATABASE_URL` itself; no credential is ever committed or
+   pasted anywhere. The tables create themselves on first request.
+2. **Settings → Environment Variables → add `ADMIN_KEY`**, any long random
+   string. Without it `/api/admin` returns 503 rather than exposing buyer data.
+
+Until step 1 is done every route answers `503 storage_not_configured` and the
+page falls back to the built-in buyer list, so nothing breaks while it is set up
+— but **nothing is being recorded either.**
