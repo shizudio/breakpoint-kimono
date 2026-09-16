@@ -300,6 +300,19 @@ handles and piece numbers only, never a name or an email address.
 This one returns names and email addresses, so it refuses to answer unless
 `ADMIN_KEY` is set and matches.
 
+### Live Google Sheet
+
+    =IMPORTDATA("https://breakpoint-kimono.vercel.app/api/sheet?key=<SHEET_KEY>")
+
+Paste that into cell A1 of a blank sheet and it fills itself, refreshing roughly
+hourly. `SHEET_KEY` is a **separate** environment variable from `ADMIN_KEY` on
+purpose: the key has to sit in a formula that every viewer of the sheet can
+read, so it must not be the one that also unlocks the full JSON dump. If a sheet
+gets shared too widely, rotate `SHEET_KEY` and `ADMIN_KEY` is unaffected.
+
+The sheet contains buyer names and email addresses — share it like a customer
+list, not a dashboard.
+
 ### Checking it works
 
     GET /api/health?key=<ADMIN_KEY>
