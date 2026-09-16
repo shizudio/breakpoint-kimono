@@ -459,7 +459,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     /* Real reservations, newest first. Everything on the page — the count, the
        fill bar, the proof line, the leaderboard and the sold-out state —
        derives from this one array. */
-    buyers: ["shizudio", "gizmothegizzer"],
+    buyers: [],
     modal: null,
     wallet: null,
     intent: "order",   // "order" (wave 1) | "wave2" (pay now) | "notify" (email only)
@@ -479,9 +479,14 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var alreadyIn = function (h) {
     h = (h || "").toLowerCase();
     for (var i = 0; i < state.buyers.length; i++) {
-      if (state.buyers[i].toLowerCase() === h) return i + 1;
+      var b = state.buyers[i];
+      if (b.handle && b.handle.toLowerCase() === h) return b.piece;
     }
     return 0;
+  };
+  // Newest first, for the bubbles and the proof line.
+  var handles = function () {
+    return state.buyers.map(function (b) { return b.handle || "anon"; });
   };
 
   var $ = function (sel) { return document.querySelector(sel); };
@@ -538,7 +543,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     $("#fill").style.width = (c / 15 * 100).toFixed(0) + "%";
     $("#remaining").textContent = 15 - c;
 
-    var shown = state.buyers.slice(0, 4);
+    var shown = handles().slice(0, 4);
     var bubbles = $("#bubbles");
     bubbles.textContent = "";
     shown.forEach(function (b, i) {
@@ -569,12 +574,17 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   function renderLeaderboard() {
-    var c = count();
     var lb = $("#leaderboard");
     lb.textContent = "";
+    /* Row N is piece N. Addressing by array position instead made row 01 the
+       newest buyer rather than piece one, disagreed with the number printed on
+       their order card, and shifted everyone up a row whenever an order was
+       cancelled. */
+    var byPiece = {};
+    state.buyers.forEach(function (x) { if (x.piece) byPiece[x.piece] = x.handle; });
     for (var i = 0; i < 15; i++) {
-      var b = state.buyers[i];
-      var taken = i < c && !!b;
+      var b = byPiece[i + 1];
+      var taken = !!b;
       var row = el("a", {
         href: taken ? "https://x.com/" + b : "https://x.com/shizudio",
         target: "_blank",
@@ -718,7 +728,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       if (r && r.ok) {
         r.json().then(function (d) { if (d && d.piece) state.myPiece = d.piece; }).catch(function () {});
       }
-      state.buyers = [handle].concat(state.buyers);
+      state.buyers = [{ piece: state.myPiece || count() + 1, handle: handle }].concat(state.buyers);
       renderReserve();
       renderLeaderboard();
       setModal("done");
@@ -734,7 +744,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       .then(function (r) { return r.json(); })
       .then(function (d) {
         if (!d || !d.configured || !Array.isArray(d.buyers)) return;
-        state.buyers = d.buyers.map(function (b) { return b.handle || "anon"; });
+        state.buyers = d.buyers.map(function (b) { return { piece: b.piece, handle: b.handle || "anon" }; });
         renderReserve();
         renderLeaderboard();
       })
@@ -1197,7 +1207,9 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   if (PREVIEW_SOLDOUT) {
     var fillers = ["ayaverse", "soltaro", "ryu_dgn", "mika_sol", "0xkenji", "nori_eth",
                    "haruspex", "kaito_sol", "mirae", "tonbo", "yuzuwave", "senri", "aoi_dev"];
-    while (state.buyers.length < PIECES) state.buyers.push(fillers[state.buyers.length - 2] || "anon");
+    var seed = [{ piece: 1, handle: "shizudio" }, { piece: 2, handle: "gizmothegizzer" }];
+    state.buyers = seed.concat(fillers.map(function (h, i) { return { piece: i + 3, handle: h }; }))
+                       .slice(0, PIECES);
   }
   renderReserve();
   renderLeaderboard();
