@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Presale ledger — Breakpoint Kimono</title>
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#000000">
+<style>
+/* Built for one job: a phone, held at a counter, in a loud hall. Large hit
+   areas, one action per row, and the piece number readable at arm's length. */
+:root{--ground:#000;--ink:#F7F4EE;--hair:rgba(247,244,238,.14);--accent:#9945FF;--accent2:#14F195;--dim:rgba(247,244,238,.5)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--ground);color:var(--ink);font:300 15px/1.6 'DM Sans',system-ui,-apple-system,sans-serif;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:24px 18px 80px}
+h1{font-size:13px;letter-spacing:.3em;text-transform:uppercase;color:var(--accent);font-weight:300;margin:0 0 4px}
+.sub{font-size:12px;color:var(--dim);margin:0 0 26px}
+input,button{font:inherit;border-radius:0}
+input{width:100%;background:transparent;border:none;border-bottom:1px solid var(--hair);color:var(--ink);padding:12px 2px;font-size:16px}
+input:focus{outline:none;border-bottom-color:var(--accent2)}
+label{display:block;font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim);margin-bottom:2px}
+.btn{width:100%;margin-top:18px;padding:16px;background:var(--ink);color:#000;border:none;letter-spacing:.24em;text-transform:uppercase;font-size:11px;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:default}
+.btn-ghost{background:none;border:1px solid var(--hair);color:var(--ink)}
+.counts{display:flex;gap:18px;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair);padding:16px 0;margin-bottom:8px}
+.counts div{flex:1}
+.counts .n{font-size:26px;font-family:Georgia,serif}
+.counts .l{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+.row{border-bottom:.5px solid var(--hair);padding:16px 2px;display:flex;gap:14px;align-items:flex-start}
+.piece{font-family:Georgia,serif;font-size:24px;min-width:42px;line-height:1.1}
+.who{flex:1;min-width:0}
+.who b{font-weight:400}
+.meta{font-size:12px;color:var(--dim);word-break:break-word}
+.code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.1em}
+.code.masked{opacity:.45;user-select:none}
+.wallet{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;cursor:pointer;border-bottom:1px dotted var(--hair-strong)}
+.wallet:hover{color:var(--accent2);border-bottom-color:var(--accent2)}
+.codes-toggle{display:flex;align-items:center;justify-content:space-between;gap:14px;border-bottom:.5px solid var(--hair);padding:14px 2px;margin-top:6px}
+/* The scanner. It covers the screen because a camera held at a counter needs
+   the whole of it, and because the only thing to do while it is open is aim. */
+.find-row{display:flex;gap:10px;align-items:flex-end}
+.find-row .grow{flex:1;min-width:0}
+.scan-btn{flex:none;padding:12px 16px;background:none;border:1px solid var(--hair-strong);color:var(--ink);font-size:10px;letter-spacing:.2em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.scan-btn:hover{border-color:var(--accent2)}
+/* The explicit display here beats the UA's [hidden]{display:none}, so without
+   the second rule this overlay stays laid over the whole page — opaque, black,
+   and swallowing every click on the ledger behind it. */
+#scanner{position:fixed;inset:0;z-index:50;background:#000;display:flex;flex-direction:column}
+#scanner[hidden]{display:none}
+#scanner video{flex:1;width:100%;object-fit:cover;background:#000}
+.scan-head{flex:none;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:16px 18px;border-bottom:.5px solid var(--hair)}
+.scan-head .t{font-size:9.5px;letter-spacing:.28em;text-transform:uppercase;color:var(--dim)}
+.scan-x{background:none;border:1px solid var(--hair);color:var(--ink);font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:11px 15px;cursor:pointer}
+.scan-foot{flex:none;padding:15px 18px;font-size:12px;line-height:1.6;color:var(--dim);text-align:center;min-height:52px}
+.scan-foot.bad{color:var(--accent);opacity:1}
+/* A frame to aim inside. Nothing reads it but the person holding the phone. */
+.reticle{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(64vw,260px);aspect-ratio:1;border:1px solid rgba(247,244,238,.5);box-shadow:0 0 0 100vmax rgba(0,0,0,.45);pointer-events:none}
+.scan-wrap{position:relative;flex:1;min-height:0;display:flex}
+/* Handing over a piece is the one irreversible thing this page does, so it gets
+   a real dialog rather than the browser's — which on a phone is a grey OS sheet
+   that says the hostname and reads like a warning about the site itself. This
+   one can show the piece number and the name, which is what staff should
+   actually be checking against the person in front of them. */
+#confirm{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:22px}
+#confirm[hidden]{display:none}
+.confirm-panel{width:min(360px,100%);background:var(--ground);border:.5px solid var(--hair);box-shadow:0 40px 100px -30px rgba(0,0,0,.9);padding:26px;display:flex;flex-direction:column;gap:18px}
+.confirm-panel .eyebrow{font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);margin:0}
+.confirm-panel h2{margin:0;font-family:Georgia,serif;font-weight:400;font-size:25px;line-height:1.15}
+.confirm-who{border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair);padding:13px 0;display:flex;align-items:baseline;gap:12px}
+.confirm-who .p{font-family:Georgia,serif;font-size:30px;line-height:1;flex:none}
+.confirm-who .n{font-size:13px;line-height:1.5}
+.confirm-who .h{font-size:12px;color:var(--dim)}
+.confirm-note{margin:0;font-size:11.5px;line-height:1.7;color:var(--dim)}
+.confirm-acts{display:flex;gap:11px}
+.confirm-acts button{flex:1;padding:15px;font-size:10px;letter-spacing:.22em;text-transform:uppercase;cursor:pointer}
+.confirm-no{background:none;border:1px solid var(--hair);color:var(--ink)}
+.confirm-no:hover{border-color:var(--hair-strong)}
+.confirm-yes{background:var(--ink);border:1px solid var(--ink);color:#000}
+.confirm-yes:hover{background:transparent;color:var(--ink)}
+.confirm-yes:disabled{opacity:.45;cursor:default}
+.codes-toggle .l{font-size:9.5px;letter-spacing:.24em;text-transform:uppercase;color:var(--dim)}
+.tog{background:none;border:1px solid var(--hair);color:var(--ink);font-size:10px;letter-spacing:.2em;text-transform:uppercase;padding:10px 14px;cursor:pointer;white-space:nowrap}
+.tog:hover{border-color:var(--accent2)}
+.tog[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+.pill{display:inline-block;font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;padding:3px 8px;border:1px solid var(--hair)}
+.pill.paid{color:var(--accent2);border-color:rgba(20,241,149,.4)}
+.pill.done{color:var(--dim)}
+.pill.pending{color:var(--accent);border-color:rgba(153,69,255,.4)}
+.pill.bad{color:#fff;background:#9945FF;border-color:#9945FF}
+.act{min-width:96px;padding:12px 8px;font-size:10px;letter-spacing:.2em;text-transform:uppercase;background:none;border:1px solid var(--hair);color:var(--ink);cursor:pointer}
+.act:disabled{opacity:.35;cursor:default}
+.err{color:var(--accent);font-size:13px;margin-top:12px;min-height:1.2em}
+.hit{border-top:1px solid var(--accent2);margin:18px 0;padding-top:18px}
+.hit .big{font-family:Georgia,serif;font-size:40px;line-height:1.1}
+.muted{color:var(--dim);font-size:12px}
+@media (max-width:520px){ .row{flex-wrap:wrap} .act{width:100%} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Presale ledger</h1>
+  <p class="sub" id="sub">Breakpoint Kimono</p>
+
+  <div id="gate">
+    <p class="muted" style="margin:0 0 18px">Sign in with a wallet named in <code>ADMIN_WALLETS</code>. Signing proves the key is yours; it approves no payment and moves nothing.</p>
+    <button class="btn" id="enter">Connect wallet</button>
+    <p class="err" id="gateErr"></p>
+  </div>
+
+  <div id="app" hidden>
+    <div class="counts" id="counts"></div>
+
+    <div style="margin-top:20px" class="find-row">
+      <div class="grow">
+        <label for="find">Pickup code or name</label>
+        <input id="find" placeholder="K7M2-9QX4" autocapitalize="characters" autocomplete="off">
+      </div>
+      <button class="scan-btn" id="scanBtn" type="button">Scan</button>
+    </div>
+    <div id="hit"></div>
+
+    <div class="codes-toggle">
+      <span class="l" id="codesLabel">Pickup codes hidden</span>
+      <button class="tog" id="codesTog" type="button" aria-pressed="false">Show codes</button>
+    </div>
+
+    <div id="list"></div>
+    <button class="btn btn-ghost" id="refresh">Refresh</button>
+    <p class="err" id="err"></p>
+  </div>
+</div>
+
+<div id="confirm" hidden>
+  <div class="confirm-panel" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+    <p class="eyebrow">Hand over</p>
+    <h2 id="confirmTitle">Release this piece?</h2>
+    <div class="confirm-who">
+      <span class="p" id="confirmPiece">—</span>
+      <span>
+        <span class="n" id="confirmName"></span><br>
+        <span class="h" id="confirmHandle"></span>
+      </span>
+    </div>
+    <p class="confirm-note">Check the name against the person in front of you. This is recorded against your wallet and cannot be undone here.</p>
+    <div class="confirm-acts">
+      <button class="confirm-no" id="confirmNo" type="button">Cancel</button>
+      <button class="confirm-yes" id="confirmYes" type="button">Hand it over</button>
+    </div>
+  </div>
+</div>
+
+<div id="scanner" hidden>
+  <div class="scan-head">
+    <span class="t">Scan the buyer's code</span>
+    <button class="scan-x" id="scanClose" type="button">Close</button>
+  </div>
+  <div class="scan-wrap">
+    <video id="scanVideo" playsinline muted></video>
+    <div class="reticle"></div>
+  </div>
+  <p class="scan-foot" id="scanMsg">Point the camera at the buyer's QR.</p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (s) { return document.querySelector(s); };
+  var data = null;
+
+  /* The code arrives in the fragment, never the query. Everything after "#"
+     stays inside the browser: it is not sent to the server, so it cannot reach
+     an access log or a proxy, and it is not carried in a Referer header. Read
+     it once, then wipe it out of the address bar and the history entry. */
+  var scanned = "";
+  (function () {
+    var m = /(?:^|[#&])c=([^&]+)/.exec(location.hash || "");
+    if (!m) return;
+    try { scanned = decodeURIComponent(m[1]); } catch (e) { scanned = m[1]; }
+    history.replaceState(null, "", location.pathname + location.search);
+  })();
+
+  function el(tag, attrs, kids) {
+    var n = document.createElement(tag);
+    for (var k in attrs) {
+      if (k === "text") n.textContent = attrs[k];
+      else if (k === "class") n.className = attrs[k];
+      else if (attrs[k] != null) n.setAttribute(k, attrs[k]);
+    }
+    (kids || []).forEach(function (c) { n.appendChild(c); });
+    return n;
+  }
+
+  function api(path, opts) {
+    opts = opts || {};
+    opts.credentials = "same-origin";
+    opts.headers = Object.assign({ "content-type": "application/json" }, opts.headers || {});
+    return fetch(path, opts).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (b) {
+        if (!r.ok) throw Object.assign(new Error(b.message || "Failed"), { code: b.error });
+        return b;
+      });
+    });
+  }
+
+  /* Base58 for the signature. Same fifteen lines as the buyer's page — the
+     ledger must not depend on a library loading before anyone can sign in. */
+  var B58 = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  function b58(bytes) {
+    var b = Array.prototype.slice.call(bytes), digits = [], i, j, carry;
+    for (i = 0; i < b.length; i++) {
+      carry = b[i];
+      for (j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
+      while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+    }
+    var out = "";
+    for (i = 0; i < b.length && b[i] === 0; i++) out += "1";
+    for (j = digits.length - 1; j >= 0; j--) out += B58[digits[j]];
+    return out;
+  }
+
+  function provider() {
+    if (window.phantom && window.phantom.solana) return window.phantom.solana;
+    if (window.solana && window.solana.isPhantom) return window.solana;
+    if (window.solflare && window.solflare.isSolflare) return window.solflare;
+    if (window.backpack && window.backpack.isBackpack) return window.backpack;
+    return null;
+  }
+
+  function signIn() {
+    var p = provider();
+    if (!p) throw Object.assign(new Error("No Solana wallet found in this browser."), { handled: true });
+    return Promise.resolve(p.connect())
+      .then(function (res) {
+        var pk = (res && res.publicKey) || p.publicKey;
+        var address = pk.toString();
+        return api("/api/session/nonce", { method: "POST", body: JSON.stringify({ pubkey: address }) })
+          .then(function (n) {
+            var bytes = new TextEncoder().encode(n.message);
+            return Promise.resolve(p.signMessage(bytes, "utf8")).then(function (sig) {
+              var raw = sig && sig.signature ? sig.signature : sig;
+              return api("/api/session/verify", {
+                method: "POST",
+                body: JSON.stringify({ pubkey: address, signature: b58(raw), nonce: n.nonce, issuedAt: n.issuedAt })
+              });
+            });
+          });
+      });
+  }
+
+  function load() {
+    return api("/api/admin/orders").then(function (b) {
+      data = b;
+      $("#gate").hidden = true;
+      $("#app").hidden = false;
+      $("#sub").textContent = "Breakpoint Kimono · " + b.network;
+      render();
+    });
+  }
+
+  $("#enter").addEventListener("click", function () {
+    var btn = $("#enter");
+    btn.disabled = true;
+    $("#gateErr").textContent = "";
+    signIn()
+      .then(load)
+      .catch(function (e) {
+        var msg = e.message || "";
+        if (e.code === 4001 || /reject|denied|cancel/i.test(msg)) msg = "You cancelled that in your wallet.";
+        if (e.code === "NOT_ADMIN") msg = "That wallet cannot open the ledger.";
+        $("#gateErr").textContent = msg;
+      })
+      .finally(function () { btn.disabled = false; });
+  });
+
+  $("#refresh").addEventListener("click", function () { load().catch(function (e) { $("#err").textContent = e.message; }); });
+
+  function statusPill(o) {
+    if (o.status === "paid" && o.collectedAt) return el("span", { class: "pill done", text: "collected" });
+    if (o.status === "paid") return el("span", { class: "pill paid", text: "to collect" });
+    if (o.status === "pending") return el("span", { class: "pill pending", text: "holding" });
+    if (o.status === "overflow") return el("span", { class: "pill bad", text: "refund owed" });
+    return el("span", { class: "pill", text: o.status });
+  }
+
+  function when(ms) { return ms ? new Date(ms).toLocaleString() : "—"; }
+
+  /* Every code on the screen at once is the ledger's worst habit: this runs on
+     a phone held at a counter, in front of a queue. Codes stay masked and are
+     revealed deliberately — a search still matches a masked code, so the usual
+     job (type four characters, find the row) never needs them shown at all.
+     The state is per visit; reloading starts hidden again. */
+  var codesShown = false;
+
+  function codeCell(o) {
+    var real = o.pickupCode || "—";
+    if (!o.pickupCode) return el("span", { class: "code", text: real });
+    return el("span", {
+      class: codesShown ? "code" : "code masked",
+      text: codesShown ? real : "••••-••••",
+      "aria-label": codesShown ? "Pickup code " + real : "Pickup code, hidden"
+    });
+  }
+  function shortWallet(w) { return w ? w.slice(0, 4) + "…" + w.slice(-4) : "—"; }
+
+  /* The buyer's wallet, on every row. One wallet can only ever hold one piece —
+     the server reuses a live hold rather than granting a second — but without
+     the address on screen there is no way to see that four rows are four people
+     rather than one person pressing Reserve four times. Tap to copy the whole
+     thing; it is also in the title for a desktop hover. */
+  function walletCell(o) {
+    var n = el("span", {
+      class: "wallet", text: shortWallet(o.wallet),
+      title: o.wallet || "", role: "button", tabindex: "0"
+    });
+    function copy() {
+      if (!o.wallet || !navigator.clipboard) return;
+      navigator.clipboard.writeText(o.wallet).then(function () {
+        var was = n.textContent;
+        n.textContent = "copied";
+        setTimeout(function () { n.textContent = was; }, 1200);
+      }, function () {});
+    }
+    n.addEventListener("click", copy);
+    n.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); copy(); }
+    });
+    return n;
+  }
+
+  /* The page's own dialog, not the browser's. window.confirm on a phone is an
+     OS sheet titled with the hostname — it cannot show the piece number or the
+     name, which are the two things staff are meant to be checking. */
+  var pendingCollect = null;
+
+  function askToCollect(o, btn) {
+    pendingCollect = { order: o, btn: btn };
+    $("#confirmPiece").textContent = o.piece != null ? String(o.piece) : "—";
+    $("#confirmName").textContent = o.name;
+    $("#confirmHandle").textContent = o.x ? "@" + o.x : "";
+    $("#confirmYes").disabled = false;
+    $("#confirmYes").textContent = "Hand it over";
+    $("#confirm").hidden = false;
+    $("#confirmYes").focus();
+  }
+
+  function closeConfirm() {
+    $("#confirm").hidden = true;
+    if (pendingCollect && pendingCollect.btn) pendingCollect.btn.disabled = false;
+    pendingCollect = null;
+  }
+
+  $("#confirmNo").addEventListener("click", closeConfirm);
+  $("#confirm").addEventListener("click", function (e) { if (e.target === $("#confirm")) closeConfirm(); });
+
+  $("#confirmYes").addEventListener("click", function () {
+    if (!pendingCollect) return;
+    var o = pendingCollect.order, btn = pendingCollect.btn;
+    var yes = $("#confirmYes");
+    yes.disabled = true;
+    yes.textContent = "Releasing…";
+    // Who released it is the signed-in wallet, recorded server-side. Nothing to type.
+    api("/api/admin/collect", { method: "POST", body: JSON.stringify({ id: o.id }) })
+      .then(function () { closeConfirm(); return load(); })
+      .catch(function (e) {
+        closeConfirm();
+        $("#err").textContent = e.message;
+        if (btn) btn.disabled = false;
+      });
+  });
+
+  function collect(o, btn) {
+    btn.disabled = true;
+    askToCollect(o, btn);
+  }
+
+  function orderRow(o, big) {
+    var who = el("div", { class: "who" }, [
+      el("div", {}, [el("b", { text: o.name }), el("span", { class: "muted", text: o.x ? "  @" + o.x : "" })]),
+      el("div", { class: "meta" }, [codeCell(o)]),
+      el("div", { class: "meta", text: o.email }),
+      el("div", { class: "meta" }, [walletCell(o)]),
+      el("div", { class: "meta", text: (o.status === "paid" ? "paid " + when(o.paidAt) : when(o.createdAt)) }),
+      el("div", { style: "margin-top:6px" }, [statusPill(o)])
+    ]);
+    if (o.collectedAt) {
+      who.appendChild(el("div", { class: "meta", text: "released by " + shortWallet(o.collectedBy) + " · " + when(o.collectedAt) }));
+    }
+    if (o.explorer) {
+      who.appendChild(el("div", { class: "meta" }, [
+        el("a", { href: o.explorer, target: "_blank", rel: "noopener", style: "color:#9B89A3", text: "transaction ↗" })
+      ]));
+    }
+    var kids = [el("div", { class: big ? "piece big" : "piece", text: o.piece ? String(o.piece) : "·" }), who];
+    if (o.status === "paid" && !o.collectedAt) {
+      var btn = el("button", { class: "act", text: "Hand over" });
+      btn.addEventListener("click", function () { collect(o, btn); });
+      kids.push(btn);
+    }
+    return el("div", { class: "row" }, kids);
+  }
+
+  function render() {
+    var sold = data.sold, cap = data.cap;
+    var collected = data.orders.filter(function (o) { return o.collectedAt; }).length;
+    var counts = $("#counts");
+    counts.textContent = "";
+    [[sold + " / " + cap, "sold"], [String(collected), "collected"], [String(sold - collected), "to hand over"]]
+      .forEach(function (p) {
+        counts.appendChild(el("div", {}, [
+          el("div", { class: "n", text: p[0] }), el("div", { class: "l", text: p[1] })
+        ]));
+      });
+    search();
+  }
+
+  function search() {
+    var q = $("#find").value.trim().toUpperCase();
+    var hit = $("#hit"), list = $("#list");
+    hit.textContent = ""; list.textContent = "";
+    if (q) {
+      var found = data.orders.filter(function (o) {
+        return (o.pickupCode && o.pickupCode.toUpperCase().indexOf(q) === 0) ||
+               o.name.toUpperCase().indexOf(q) !== -1 ||
+               (o.x && o.x.toUpperCase().indexOf(q) !== -1);
+      });
+      if (!found.length) {
+        hit.appendChild(el("div", { class: "hit" }, [el("div", { class: "muted", text: "Nothing under \u201C" + q + "\u201D." })]));
+      } else {
+        var box = el("div", { class: "hit" });
+        found.slice(0, 5).forEach(function (o) { box.appendChild(orderRow(o, true)); });
+        hit.appendChild(box);
+      }
+      return;
+    }
+    data.orders.forEach(function (o) { list.appendChild(orderRow(o)); });
+  }
+
+  $("#find").addEventListener("input", function () { if (data) search(); });
+
+  /* ---------- the scanner ----------
+
+     Staff can always scan with the phone's own camera app: the QR holds a URL
+     that opens this page with the code in the fragment. But that means leaving
+     the ledger, and at a counter with a queue it is one app-switch too many.
+     This keeps it in the page.
+
+     jsQR rather than BarcodeDetector, which iOS Safari does not have — and a
+     counter at an event runs on phones. It is 251KB and only fetched when this
+     button is first pressed. */
+  var scanning = false, scanStream = null, decoder = null, rafId = null;
+
+  function loadDecoder() {
+    if (window.jsQR) return Promise.resolve(window.jsQR);
+    if (decoder) return decoder;
+    decoder = new Promise(function (resolve, reject) {
+      var t = document.createElement("script");
+      t.src = "/vendor/jsqr.js";
+      t.onload = function () { window.jsQR ? resolve(window.jsQR) : reject(new Error("decoder failed to load")); };
+      t.onerror = function () { decoder = null; reject(new Error("Could not load the scanner.")); };
+      document.head.appendChild(t);
+    });
+    return decoder;
+  }
+
+  /* The QR holds this page's URL with the code in the fragment; a plain code
+     works too, so a printed list or another generator is still scannable. */
+  function codeFrom(text) {
+    if (!text) return null;
+    var m = /(?:[#&]c=)([0-9A-Za-z-]+)/.exec(text);
+    var candidate = m ? decodeURIComponent(m[1]) : text.trim();
+    return /^[0-9A-Z]{4}-[0-9A-Z]{4}$/.test(candidate.toUpperCase()) ? candidate.toUpperCase() : null;
+  }
+
+  function scanMsg(text, bad) {
+    var n = $("#scanMsg");
+    n.textContent = text;
+    n.className = "scan-foot" + (bad ? " bad" : "");
+  }
+
+  function stopScan() {
+    scanning = false;
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    if (scanStream) { scanStream.getTracks().forEach(function (t) { t.stop(); }); scanStream = null; }
+    $("#scanVideo").srcObject = null;
+    $("#scanner").hidden = true;
+  }
+
+  function startScan() {
+    /* getUserMedia needs a secure context. localhost counts; a bare LAN address
+       over http does not, and the failure is a bland NotAllowedError — so say
+       what is actually wrong. */
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      return scanMsg(window.isSecureContext
+        ? "This browser has no camera API."
+        : "The camera needs https. Open the ledger over https, or type the code instead.", true);
+    }
+    $("#scanner").hidden = false;
+    scanMsg("Starting the camera…");
+
+    var video = $("#scanVideo");
+    var canvas = document.createElement("canvas");
+    var ctx = canvas.getContext("2d", { willReadFrequently: true });
+
+    Promise.all([
+      loadDecoder(),
+      navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } }, audio: false
+      })
+    ]).then(function (both) {
+      var jsQR = both[0];
+      scanStream = both[1];
+      video.srcObject = scanStream;
+      return video.play().then(function () {
+        scanning = true;
+        scanMsg("Point the camera at the buyer's QR.");
+        (function tick() {
+          if (!scanning) return;
+          if (video.readyState === video.HAVE_ENOUGH_DATA) {
+            // Downscale: decoding a full 1080p frame every tick heats the phone
+            // and is no more accurate at this distance.
+            var w = 480, h = Math.round(video.videoHeight / video.videoWidth * 480) || 360;
+            canvas.width = w; canvas.height = h;
+            ctx.drawImage(video, 0, 0, w, h);
+            var img = ctx.getImageData(0, 0, w, h);
+            var hit = jsQR(img.data, w, h, { inversionAttempts: "dontInvert" });
+            var code = hit && codeFrom(hit.data);
+            if (code) return found(code);
+            if (hit) scanMsg("That is not a pickup code.", true);
+          }
+          rafId = requestAnimationFrame(tick);
+        })();
+      });
+    }).catch(function (e) {
+      var msg = e && e.message || "";
+      if (e && (e.name === "NotAllowedError" || /denied|permission/i.test(msg))) {
+        msg = "Camera access was refused. Allow it in the browser, or type the code instead.";
+      } else if (e && e.name === "NotFoundError") {
+        msg = "No camera on this device. Type the code instead.";
+      }
+      scanMsg(msg || "The camera would not start.", true);
+    });
+  }
+
+  function found(code) {
+    stopScan();
+    $("#find").value = code;
+    if (data) search();
+    /* Filtered, not acted on. Handing over a piece is a person's decision, made
+       after looking at the row and the name — never something a scan does. */
+    var act = $("#hit") && $("#hit").querySelector(".act");
+    if (act) act.focus();
+    else $("#err").textContent = "Nothing is held under " + code + ".";
+  }
+
+  $("#scanBtn").addEventListener("click", function () {
+    $("#err").textContent = "";
+    if (scanning) stopScan(); else startScan();
+  });
+  $("#scanClose").addEventListener("click", stopScan);
+  document.addEventListener("keydown", function (e) {
+    if (e.key !== "Escape") return;
+    if (!$("#confirm").hidden) return closeConfirm();
+    if (scanning) stopScan();
+  });
+
+  $("#codesTog").addEventListener("click", function () {
+    codesShown = !codesShown;
+    var b = $("#codesTog");
+    b.setAttribute("aria-pressed", codesShown ? "true" : "false");
+    b.textContent = codesShown ? "Hide codes" : "Show codes";
+    $("#codesLabel").textContent = codesShown ? "Pickup codes visible" : "Pickup codes hidden";
+    if (data) search();
+  });
+
+  // A scanned QR left the code in the fragment; it has been read and wiped.
+  if (scanned) $("#find").value = scanned;
+  // The session cookie may still be good from a previous visit.
+  load().catch(function () {});
+})();
+</script>
+</body>
+</html>

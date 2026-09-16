@@ -1,0 +1,23 @@
+{
+  "name": "breakpoint-kimono",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "The Breakpoint Kimono presale \u2014 Vite front end, Node API.",
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "server": "npm --prefix server run start",
+    "server:check": "npm --prefix server run check",
+    "server:backup": "npm --prefix server run backup",
+    "vendor": "npm --prefix server run vendor",
+    "test": "npm --prefix server test",
+    "install:all": "npm install && npm --prefix server install",
+    "measure": "npm --prefix server run measure"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.11.0",
+    "vite": "^7.1.5"
+  }
+}

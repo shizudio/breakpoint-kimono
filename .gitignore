@@ -5,3 +5,22 @@ node_modules/
 # Client originals and the design handoff bundle — kept on disk, not in the
 # deploy repo. site/ already carries the web-optimised derivatives.
 source/
+
+# Server secrets and the order ledger. The ledger is real money changing hands —
+# it belongs in a backup, never in the repo.
+# Env files everywhere. The root one holds only VITE_* names, which are
+# compiled into the page and public by definition — it is ignored anyway, so
+# that nothing secret can be added to it later by accident.
+.env
+.env.*
+!.env.example
+server/.env
+server/.env.*
+!server/.env.example
+data/
+*.db
+*.db-wal
+*.db-shm
+
+# Vite build output
+dist/

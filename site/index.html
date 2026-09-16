@@ -6,7 +6,7 @@
 <title>2026 Breakpoint Kimono — Shizudio</title>
 <meta name="description" content="A fifteen-piece run of the Breakpoint Kimono by Shizudio. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
 <meta name="theme-color" content="#000000">
-<link rel="icon" href="assets/logo.png">
+<link rel="icon" href="/assets/logo.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="2026 Breakpoint Kimono — Shizudio">
 <meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
@@ -48,9 +48,6 @@ img{display:block}
 
 .eyebrow{font-family:var(--ui);font-weight:300;font-size:9px;letter-spacing:.34em;text-transform:uppercase;color:var(--accent);margin:0}
 .section{border-top:.5px solid var(--hair)}
-/* Preview banner — remove once payments are live (see README). */
-.preview-bar{position:relative;z-index:4;flex:none;text-align:center;padding:8px 12px;border-bottom:.5px solid var(--hair);font-size:clamp(7px,1.6vw,9px);letter-spacing:.24em;text-transform:uppercase;opacity:.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.4}
-.preview-note{margin:0;font-size:11.5px;line-height:1.7;opacity:.5}
 .h2{margin:22px 0 28px;font-family:var(--ed);font-weight:300;line-height:1.14}
 .body{font-size:15px;line-height:1.88;max-width:46ch;opacity:.72;margin:0 0 18px}
 
@@ -164,13 +161,67 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 /* modal */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
 #modal[hidden]{display:none}
-.panel{width:min(440px,100%);background:var(--ground);border:.5px solid var(--hair);box-shadow:0 40px 100px -30px rgba(0,0,0,.8);padding:clamp(24px,4vw,34px);display:flex;flex-direction:column;gap:20px;max-height:90vh;overflow:auto}
-.panel h3{margin:0;font-family:var(--ed);font-weight:300;font-size:30px;line-height:1.1}
+.panel{width:min(440px,100%);background:var(--ground);border:.5px solid var(--hair);box-shadow:0 40px 100px -30px rgba(0,0,0,.8);padding:clamp(24px,4vw,34px);display:flex;flex-direction:column;gap:17px;max-height:92vh;overflow:auto}
+.panel h3{margin:0;font-family:var(--ed);font-weight:300;font-size:clamp(23px,3.4vh,28px);line-height:1.1}
 .wallet-btn{display:flex;justify-content:space-between;align-items:center;font-size:11.5px;font-weight:300;letter-spacing:.06em;padding:16px 18px;border:.5px solid var(--hair-strong);background:transparent;color:var(--ink);cursor:pointer;transition:border-color .2s}
 .wallet-btn:hover{border-color:var(--accent)}
 .card-frame{border:.5px solid var(--hair)}
-.card-art{display:block;width:100%;height:auto;background:var(--ground-alt)}
-.card-meta{padding:13px 16px;border-top:.5px solid var(--hair);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+
+/* ---- checkout ---- */
+/* One panel carries four steps and every way they can stall, so the states get
+   real styling rather than an alert(): a wallet that is not installed, a
+   transaction waiting on the chain, a payment that did not verify. */
+.wallet-btn[disabled]{opacity:.34;cursor:default}
+.wallet-btn[disabled]:hover{border-color:var(--hair-strong)}
+.wallet-btn .tag{font-size:9px;letter-spacing:.2em;text-transform:uppercase;opacity:.5}
+.step-mark{font-size:9px;letter-spacing:.34em;text-transform:uppercase;opacity:.4;margin:0}
+.wallet-chip{display:flex;align-items:center;gap:8px;font-size:11px;letter-spacing:.06em;opacity:.55}
+.wallet-chip i{width:5px;height:5px;border-radius:50%;background:var(--accent2);flex:none}
+.alert{margin:0;padding:14px 16px;border:.5px solid rgba(153,69,255,.5);background:rgba(153,69,255,.08);font-size:13px;line-height:1.7}
+.alert.calm{border-color:var(--hair-strong);background:none;opacity:.6}
+.status{display:flex;align-items:center;gap:11px;font-size:12.5px;line-height:1.6;opacity:.75;margin:0}
+.spinner{width:13px;height:13px;flex:none;border:1.5px solid var(--hair-strong);border-top-color:var(--accent2);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spinner{animation-duration:2.4s}}
+.pay-sum{display:flex;justify-content:space-between;align-items:baseline;border-top:.5px solid var(--hair);border-bottom:.5px solid var(--hair);padding:15px 0}
+.pay-sum .amt{font-family:var(--ed);font-size:30px;line-height:1}
+.pay-sum .who{font-size:11px;letter-spacing:.06em;opacity:.5;text-align:right}
+/* The pickup pass. The code has to survive being read aloud across a counter,
+   so it gets the largest type in the panel after the piece number. */
+.pass{border:.5px solid var(--hair);padding:14px;display:flex;gap:16px;align-items:center}
+.pass .qr{width:104px;height:104px;flex:none;background:#F7F4EE;padding:7px}
+.pass .qr svg{display:block;width:100%;height:100%}
+.pass .code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;letter-spacing:.14em;margin:3px 0 0}
+.pass .lbl{font-size:9px;letter-spacing:.3em;text-transform:uppercase;opacity:.45}
+/* The pickup code is a bearer token for a physical object: whoever reads it at
+   the counter can be handed the piece. So it stays masked until asked for, and
+   the QR — which is the same code in another form — is not even fetched until
+   then. The mask is the same width and font as the code, so revealing it does
+   not move the panel. */
+.code.masked{opacity:.4;user-select:none}
+.reveal{background:none;border:.5px solid var(--hair-strong);color:var(--ink);font-size:9px;letter-spacing:.24em;text-transform:uppercase;padding:9px 13px;cursor:pointer;white-space:nowrap;transition:border-color .2s}
+.reveal:hover{border-color:var(--accent2)}
+.code-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:3px 0 0}
+.keepsafe{margin:11px 0 0;padding:10px 12px;border-left:1.5px solid var(--accent);font-size:11.5px;line-height:1.7;opacity:.78}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;gap:18px}
+.keepsafe b{font-weight:400;opacity:1}
+.ordrow{display:flex;justify-content:space-between;gap:16px;font-size:12px;padding:9px 0;border-bottom:.5px solid var(--hair)}
+.ordrow span:first-child{opacity:.45;letter-spacing:.06em;flex:none}
+.ordrow span:last-child{text-align:right;word-break:break-word}
+@media (max-width:420px){ .pass{flex-direction:column;align-items:flex-start;gap:14px} }
+@media (max-height:760px){ .panel{padding:clamp(18px,3vw,24px);gap:14px} }
+/* An iPhone SE is 667px tall, and the confirmation is the one panel that should
+   not need scrolling — it is what someone holds up at a counter. Give it the
+   last of the margin and let the order card shrink to a band. */
+@media (max-height:700px){ .panel{max-height:96vh;gap:12px} .card-art{height:80px} .pass{padding:12px} }
+/* The share card is 2:1 and would run to ~186px at panel width, which is the
+   single biggest reason this panel used to need scrolling. Crop it to a band
+   instead: the garment and the wordmark both sit in the middle, so nothing that
+   matters is lost. The width/height attributes stay on the <img> for CLS, which
+   is why this needs an explicit height rather than aspect-ratio — an attribute
+   height would otherwise win and slice the artwork. */
+.card-art{display:block;width:100%;height:clamp(84px,15vh,128px);object-fit:cover;object-position:center 46%;background:var(--ground-alt)}
+.card-meta{padding:11px 14px;border-top:.5px solid var(--hair);display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
 .card-meta .lbl{font-size:9px;letter-spacing:.28em;text-transform:uppercase;opacity:.4}
 .card-meta .who{font-size:11px;letter-spacing:.06em;opacity:.72}
 .btn-invert{font-size:9.5px;font-weight:300;letter-spacing:.26em;text-transform:uppercase;padding:17px;border:1px solid var(--ink);background:var(--ink);color:#000000;cursor:pointer;transition:background .2s,color .2s}
@@ -178,7 +229,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
 /* On very short viewports give the hero its full height budget back — the
    turntable must never collapse. The order card and modal still disclose it. */
-@media (max-height:540px){ .preview-bar{display:none} }
 /* The turntable frames are 16:9. On a portrait phone that letterboxes the
    garment into a thin band with dead space above and below, so scale the frame
    up and let the hero's overflow:hidden crop the empty sides — the radial mask
@@ -226,8 +276,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
 <div id="loader">
   <div class="seal">
-    <img class="base" src="assets/logo.png" alt="岩花" lang="zh-Hans">
-    <div class="clip" id="sealClip"><img src="assets/logo.png" alt=""></div>
+    <img class="base" src="/assets/logo.png" alt="岩花" lang="zh-Hans">
+    <div class="clip" id="sealClip"><img src="/assets/logo.png" alt=""></div>
   </div>
   <div class="loader-label">Shizudio<br>Breakpoint 2026</div>
   <div class="loader-pct" id="loadPct">000 / 100</div>
@@ -235,7 +285,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
 <div id="hero">
   <div class="hero-inner">
-    <div class="preview-bar">Preview · payments are not live</div>
     <header class="hero-top">
       <div class="stack">
         <span style="opacity:.5">Presale closes in</span>
@@ -244,7 +293,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     </header>
     <div class="hero-mid">
       <h1>2026 Breakpoint Kimono</h1>
-      <img id="turntable" src="frames-v2/f00.jpg" alt="The 2026 Breakpoint Kimono, full turntable view">
+      <img id="turntable" src="/frames-v2/f00.jpg" alt="The 2026 Breakpoint Kimono, full turntable view">
     </div>
     <div class="reserve">
       <div class="count-row"><span class="n" id="countNum">5</span><span>of 15 reserved</span></div>
@@ -268,7 +317,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       <p class="body" style="margin:0">It is not really DeFi merch this time. More an experiment in turning our taste and belief into a piece of apparel <em>you would wear for days and years ahead.</em></p>
     </div>
     <figure style="margin:0;align-self:start">
-      <img loading="lazy" src="web/modeling.jpg" alt="Two models wearing the kimono, front and back" style="width:100%;height:auto;background:var(--ground-alt)">
+      <img loading="lazy" src="/web/modeling.jpg" alt="Two models wearing the kimono, front and back" style="width:100%;height:auto;background:var(--ground-alt)">
       <figcaption>Front and back · genderless cut</figcaption>
     </figure>
   </div>
@@ -286,22 +335,22 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     <p class="eyebrow">002 — Materiality &amp; function</p>
     <div class="mat-grid">
       <div class="mat">
-        <img loading="lazy" src="web/collar.jpg" alt="Song brocade collar">
+        <img loading="lazy" src="/web/collar.jpg" alt="Song brocade collar">
         <h3>Song brocade collar <span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed);font-weight:300">宋锦</span></h3>
         <p>Song brocade silk runs the full length of the collar — a woven tradition with centuries behind it, set where the garment sits closest to the face.</p>
       </div>
       <div class="mat">
-        <img loading="lazy" src="web/quilt.jpg" alt="Padded cotton–nylon body">
+        <img loading="lazy" src="/web/quilt.jpg" alt="Padded cotton–nylon body">
         <h3>Padded cotton–nylon body</h3>
         <p>A lightly padded cotton–nylon shell holds its line without stiffness, wave-quilted so the loft stays even after years of wear.</p>
       </div>
       <div class="mat">
-        <img loading="lazy" src="web/pocket.jpg" alt="Patterned quilt lining and inner pocket">
+        <img loading="lazy" src="/web/pocket.jpg" alt="Patterned quilt lining and inner pocket">
         <h3>Patterned quilt lining &amp; inner pocket</h3>
         <p>Inside, a satin wave quilt meets the brocade placket, with a deep interior pocket sized for a phone, a passport or a hardware wallet.</p>
       </div>
       <div class="mat">
-        <img loading="lazy" src="web/embroidery.jpg" alt="岩花 embroidery">
+        <img loading="lazy" src="/web/embroidery.jpg" alt="岩花 embroidery">
         <h3><span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed);font-weight:300">岩花</span> embroidery</h3>
         <p>The house mark <span lang="zh-Hans" style="font-family:'Noto Serif SC',var(--ed)">岩花</span> — cliff flower, the alpine bloom that roots in stone — embroidered by hand at the hem in tonal thread.</p>
       </div>
@@ -312,7 +361,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 <section class="section">
   <div class="two-col about-grid" style="max-width:960px">
     <div class="about-portrait">
-      <img loading="lazy" src="web/portrait.jpg" alt="Shina Foo" style="width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--ground-alt);border:.5px solid var(--hair)">
+      <img loading="lazy" src="/web/portrait.jpg" alt="Shina Foo" style="width:100%;aspect-ratio:4/5;object-fit:cover;background:var(--ground-alt);border:.5px solid var(--hair)">
     </div>
     <div>
       <p class="eyebrow">003 — About me</p>
@@ -355,7 +404,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       </div>
       <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
         <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
-        <p class="preview-note" style="text-align:center;margin:-4px 0 0">Preview — neither the form nor the wallet is connected yet. To reserve a piece today, write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.</p>
       </div>
       <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
     </div>
@@ -394,20 +442,102 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   <div class="panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle"></div>
 </div>
 
-<script>
+<script type="module">
 (function () {
   "use strict";
 
-  /* The presale end date. Fixed and shared by every visitor — not a per-visitor
-     timer. Move this to the server when the reservation API lands. */
+  /* ---------- the server ----------
+
+     Everything that was hard-coded in the prototype now comes from /api/state:
+     the closing date, the count, the buyers, the sold-out flag. The fifteen-
+     piece cap is enforced in the database and nowhere else — the bar and the
+     leaderboard below are display, and a visitor editing them changes nothing.
+
+     The date is still written here as a fallback so the countdown has something
+     to show in the first moments after load, and if the API is unreachable. */
   var PRESALE_ENDS = Date.UTC(2026, 8, 29, 12, 0, 0); // 2026-09-29 12:00 UTC
+
+  /* Where the API lives, and how the cookie has to travel to reach it.
+
+     Empty VITE_SERVER_URL means one origin — the Vite proxy in development, a
+     reverse proxy in production — and the session rides a SameSite=Lax cookie
+     with nothing else to arrange. An absolute URL means cross-origin, which
+     needs credentials:"include" here and, on the server, ALLOWED_ORIGINS plus
+     SECURE_COOKIES=1 so the cookie is SameSite=None; Secure. */
+  var API_BASE = (import.meta.env && import.meta.env.VITE_SERVER_URL || "").replace(/\/+$/, "");
+  var CREDENTIALS = API_BASE ? "include" : "same-origin";
+
+  function apiUrl(path) { return API_BASE + path; }
+
+  function api(method, path, body) {
+    return fetch(apiUrl(path), {
+      method: method,
+      credentials: CREDENTIALS,
+      headers: { "content-type": "application/json" },
+      body: body == null ? undefined : JSON.stringify(body)
+    }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (b) {
+        if (!r.ok) {
+          throw Object.assign(new Error(b.message || "Something went wrong on our side."), {
+            code: b.error, fields: b.fields, retryable: b.retryable, status: r.status
+          });
+        }
+        return b;
+      });
+    }, function () {
+      throw Object.assign(new Error("We could not reach the server. Check your connection."), { code: "OFFLINE" });
+    });
+  }
+
+  /* Base58, for the one value we hand back to the server as text: the signature
+     from signMessage. Fifteen lines here saves loading a library before sign-in. */
+  var B58_ALPHABET = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+  function b58(bytes) {
+    var b = Array.prototype.slice.call(bytes), digits = [], i, j, carry;
+    for (i = 0; i < b.length; i++) {
+      carry = b[i];
+      for (j = 0; j < digits.length; j++) { carry += digits[j] << 8; digits[j] = carry % 58; carry = (carry / 58) | 0; }
+      while (carry > 0) { digits.push(carry % 58); carry = (carry / 58) | 0; }
+    }
+    var out = "";
+    for (i = 0; i < b.length && b[i] === 0; i++) out += "1";
+    for (j = digits.length - 1; j >= 0; j--) out += B58_ALPHABET[digits[j]];
+    return out;
+  }
+
+  /* @solana/web3.js is 473KB and only the checkout needs it, so it loads on the
+     first click of a reserve button rather than in front of the hero. It is
+     vendored under site/vendor/ rather than pulled from a CDN: this is the one
+     page where a compromised third-party script costs someone 300 USDC.
+     The filename carries the version — bump it with `npm run vendor`. */
+  var WEB3_SRC = "/vendor/solana-web3-1.99.0.min.js";
+  var web3Loading = null;
+  function loadWeb3() {
+    if (window.solanaWeb3) return Promise.resolve(window.solanaWeb3);
+    if (web3Loading) return web3Loading;
+    web3Loading = new Promise(function (resolve, reject) {
+      var tag = document.createElement("script");
+      tag.src = WEB3_SRC;
+      tag.async = true;
+      tag.onload = function () {
+        if (window.solanaWeb3) resolve(window.solanaWeb3);
+        else { web3Loading = null; reject(new Error("The payment library did not initialise. Reload and try again.")); }
+      };
+      tag.onerror = function () {
+        web3Loading = null;
+        reject(new Error("We could not load the payment library. Reload and try again."));
+      };
+      document.head.appendChild(tag);
+    });
+    return web3Loading;
+  }
 
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
   /* Self-hosted profile pictures. Anyone without one falls back to the initial on
      a tinted ground, which is what the design specified. */
   var AVATARS = {
-    shizudio: "web/avatar-shizudio.jpg",
-    gizmothegizzer: "web/avatar-gizmothegizzer.jpg"
+    shizudio: "/web/avatar-shizudio.jpg",
+    gizmothegizzer: "/web/avatar-gizmothegizzer.jpg"
   };
   function avatarInto(node, handle) {
     var src = AVATARS[handle];
@@ -416,13 +546,34 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     node.appendChild(el("img", { src: src, alt: "", loading: "lazy", width: "128", height: "128" }));
     return true;
   }
-  var WALLETS = ["Phantom", "Solflare", "Backpack"];
+  /* Extensions inject themselves at different moments, so each wallet is found
+     when the panel renders rather than once at load. A wallet that is not
+     installed stays in the list as a link to its download page — the design
+     asks for three names, and hiding two of them because of what the visitor
+     happens to have installed reads as a broken panel. */
+  var WALLETS = [
+    {
+      name: "Phantom", url: "https://phantom.app/download",
+      find: function () {
+        if (window.phantom && window.phantom.solana) return window.phantom.solana;
+        return (window.solana && window.solana.isPhantom) ? window.solana : null;
+      }
+    },
+    {
+      name: "Solflare", url: "https://solflare.com/download",
+      find: function () { return (window.solflare && window.solflare.isSolflare) ? window.solflare : null; }
+    },
+    {
+      name: "Backpack", url: "https://backpack.app/download",
+      find: function () { return (window.backpack && window.backpack.isBackpack) ? window.backpack : null; }
+    }
+  ];
   var FRAMES = 72;
   var SHARE_URL = "https://breakpoint-kimono.vercel.app/";
   /* Frames are served immutable for a year, so a new turntable MUST land on a
      new path — bump this and rename the folder, or returning visitors keep the
      old render out of disk cache. Keep the <img src> above in step. */
-  var FRAMES_DIR = "frames-v2/";
+  var FRAMES_DIR = "/frames-v2/";
   var SPAN = 2600; // px of wheel travel for one full rotation
   /* The hold is released from inside consume(), which only runs on input. A wheel
      streams events, so desktop releases the moment the beat is up. A swipe is one
@@ -436,17 +587,84 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   var state = {
-    /* Real reservations, newest first. Everything on the page — the count, the
-       fill bar, the proof line, the leaderboard and the sold-out state —
-       derives from this one array. */
-    buyers: ["shizudio", "gizmothegizzer"],
+    /* Mirrors /api/state. Everything on the page — the count, the fill bar, the
+       proof line, the leaderboard and the sold-out state — derives from this,
+       and it is replaced wholesale each time the server tells us something.
+       Nothing here is authoritative: the cap lives in the database. */
+    cap: 15,
+    sold: 0,
+    buyers: [],              // [{ handle, piece }], newest first; handle may be null
+    soldOut: false,
+    presaleEndsAt: PRESALE_ENDS,
+    presaleOver: false,
+    priceUsdc: 300,
+
     modal: null,
-    wallet: null,
+    wallet: null,            // the signed-in address
+    walletName: null,
+    provider: null,          // the injected extension we are talking to
+    myOrders: [],            // what this wallet already holds
+    order: null,             // the order being paid for
+    payment: null,           // the unsigned transaction the server built for it
+    busy: false,
+    notice: null,            // { tone, text } shown in the panel
+    prefilled: false,        // the form has been filled back in for this arrival
+    codeShown: false,        // the pickup code is masked until asked for
     faqOpen: 0
   };
-  var lastOrder = null;
 
-  var count = function () { return Math.min(15, state.buyers.length); };
+  var count = function () { return Math.min(state.cap, state.sold); };
+
+  /* What the signed-in wallet already holds. Fetched once when a session turns
+     out to be live — on a reload the cookie signs us back in without going
+     through connect, and without this the page would have no idea the visitor
+     had already bought. */
+  function refreshMyOrders() {
+    return api("GET", "/api/orders/mine").then(function (out) {
+      state.myOrders = out.orders || [];
+      return state.myOrders;
+    }, function () { return []; });
+  }
+
+  function paidOrder() {
+    return (state.myOrders || []).filter(function (o) { return o.status === "paid"; })[0] || null;
+  }
+
+  /* A piece already held by this wallet, paid for or not. Someone who got as
+     far as the wallet prompt and stopped comes back to a piece that is still
+     theirs for the rest of the hold — and to the details they already typed. */
+  function heldOrder() {
+    return (state.myOrders || []).filter(function (o) {
+      return o.status === "pending" && (!o.holdExpiresAt || o.holdExpiresAt > Date.now());
+    })[0] || null;
+  }
+
+  function applyState(s) {
+    if (!s) return;
+    state.cap = s.cap;
+    state.sold = s.sold;
+    state.buyers = s.buyers || [];
+    state.soldOut = s.soldOut;
+    state.presaleEndsAt = s.presaleEndsAt;
+    state.presaleOver = s.presaleOver;
+    state.priceUsdc = s.priceUsdc;
+    if (s.wallet && s.wallet !== state.wallet) {
+      state.wallet = s.wallet;
+      refreshMyOrders();
+      // Quietly put the wallet back in reach before anything needs it.
+      reattachWallet();
+    }
+    renderReserve();
+    renderLeaderboard();
+  }
+
+  function loadState() {
+    return api("GET", "/api/state").then(applyState, function () {
+      /* The page is a shop window as much as a checkout. If the API is down the
+         copy, the turntable and the photography still work — only the numbers
+         go quiet, and the reserve button will say so when it is pressed. */
+    });
+  }
 
   var $ = function (sel) { return document.querySelector(sel); };
   var esc = function (t) { var d = document.createElement("div"); d.textContent = t; return d.innerHTML; };
@@ -465,7 +683,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   /* ---------- countdown ---------- */
   function pad(n) { return String(n).padStart(2, "0"); }
   function tickClock() {
-    var left = Math.max(0, PRESALE_ENDS - Date.now());
+    var left = Math.max(0, state.presaleEndsAt - Date.now());
     var d = Math.floor(left / 86400000),
         h = Math.floor(left / 3600000) % 24,
         m = Math.floor(left / 60000) % 60,
@@ -490,10 +708,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   function renderReserve() {
-    var c = count();
+    var c = count(), cap = state.cap || 15;
     $("#countNum").textContent = c;
-    $("#fill").style.width = (c / 15 * 100).toFixed(0) + "%";
-    $("#remaining").textContent = 15 - c;
+    $("#fill").style.width = (c / cap * 100).toFixed(0) + "%";
+    $("#remaining").textContent = Math.max(0, cap - c);
 
     var shown = state.buyers.slice(0, 4);
     var bubbles = $("#bubbles");
@@ -502,28 +720,36 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       var node = el("div", {
         class: "bubble",
         style: "background:" + TINTS[i % 4],
-        text: b[0].toUpperCase()
+        text: b.handle ? b.handle[0].toUpperCase() : "·"
       });
-      avatarInto(node, b);
+      if (b.handle) avatarInto(node, b.handle);
       bubbles.appendChild(node);
     });
-    var more = Math.max(0, c - shown.length);
-    $("#proofText").textContent = proofLine(shown, more);
+    /* A buyer who left no X handle is counted but never named. They fall into
+       the remainder instead, so the line cannot out someone who declined. */
+    var named = shown.map(function (b) { return b.handle; }).filter(Boolean);
+    $("#proofText").textContent = proofLine(named, Math.max(0, c - named.length));
 
-    var sold = c >= 15;
-    $("#orderLive").hidden = sold;
-    $("#soldOut").hidden = !sold;
+    $("#orderLive").hidden = state.soldOut;
+    $("#soldOut").hidden = !state.soldOut;
   }
 
   function renderLeaderboard() {
-    var c = count();
     var lb = $("#leaderboard");
     lb.textContent = "";
-    for (var i = 0; i < 15; i++) {
-      var b = state.buyers[i];
-      var taken = i < c && !!b;
+    /* Rows are piece numbers, and the server decides which piece each buyer
+       holds. Indexing the array by position would renumber the whole run the
+       moment an order is cancelled or refunded. */
+    var byPiece = {};
+    state.buyers.forEach(function (b) { if (b.piece) byPiece[b.piece] = b; });
+
+    for (var i = 0; i < (state.cap || 15); i++) {
+      var b = byPiece[i + 1];
+      var handle = b ? b.handle : null;
+      var taken = !!b;
       var row = el("a", {
-        href: taken ? "https://x.com/" + b : "https://x.com/shizudio",
+        // An anonymous buyer has nothing to link to, so the row points home.
+        href: handle ? "https://x.com/" + handle : "https://x.com/shizudio",
         target: "_blank",
         rel: "noopener"
       }, [
@@ -532,15 +758,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
           var av = el("span", {
             class: "av",
             style: "background:" + (taken ? TINTS[i % 5] : "transparent"),
-            text: taken ? b[0].toUpperCase() : ""
+            text: handle ? handle[0].toUpperCase() : ""
           });
-          if (taken) avatarInto(av, b);
+          if (handle) avatarInto(av, handle);
           return av;
         })(),
         el("span", {
           class: "handle",
           style: "opacity:" + (taken ? ".85" : ".3"),
-          text: taken ? "@" + b : "Open"
+          text: handle ? "@" + handle : (taken ? "Reserved" : "Open")
         }),
         el("span", {
           class: "state",
@@ -603,8 +829,9 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     { q: "Why only fifteen?", a: "Every piece is cut and finished on one table. Fifteen is what we can make properly between now and Breakpoint without handing the work to someone else." },
     { q: "When does it ship?", a: "We cut through October and ship in November, ahead of the event. If you would rather collect yours in person at Breakpoint, say so in the form and we will hold it." },
     { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
-    { q: "How does paying with USDC or USDT work?", a: "Connect a Solana wallet, approve a single 300 transfer to the studio address, and your piece is held against that transaction. No mint, no token, no secondary anything." },
-    { q: "What if I cannot use a wallet?", a: "Use the order form. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
+    { q: "How does paying work?", a: "Connect a Solana wallet, leave your details, and approve a single 300 USDC transfer to the studio address. Your piece is held while you pay and confirmed once the transfer lands on chain — we check the chain itself, not your browser. No mint, no token, no secondary anything." },
+    { q: "How do I collect it at Breakpoint?", a: "Paying gives you a pickup code and a QR you can screenshot. Show either at the counter and we hand you your piece — it works offline, and your wallet can always reopen it." },
+    { q: "What if I cannot use a wallet?", a: "Write to @shizudio. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
     { q: "Can I get a refund?", a: "Until we cut your piece, yes — write to us and we return the full amount. Once it is on the table it belongs to you." }
   ];
   function renderFaq() {
@@ -628,131 +855,527 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     });
   }
 
-  /* ---------- modal ---------- */
+  /* ---------- checkout ----------
+
+     Four steps in one panel: connect, details, pay, reserved. The wallet comes
+     first because the order is created against the signed-in wallet — the
+     server will not take a form from an anonymous browser, and the piece is
+     held the moment the details land, not when the money does.
+
+     Every step can stall, and each stall gets a sentence rather than an alert:
+     a wallet that is not installed, a cancelled prompt, a transaction the RPC
+     has not caught up with yet. The one state that must never be silent is a
+     payment that went out and did not verify — that keeps the signature on
+     screen and offers to try again. */
+
   var modal = $("#modal"), panel = modal.firstElementChild;
-  modal.addEventListener("click", function () { setModal(null); });
+  modal.addEventListener("click", function () { if (!state.busy) setModal(null); });
   panel.addEventListener("click", function (e) { e.stopPropagation(); });
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape" && state.modal) setModal(null);
+    if (e.key === "Escape" && state.modal && !state.busy) setModal(null);
   });
 
-  function setModal(step) { state.modal = step; renderModal(); }
+  function setModal(step) {
+    state.modal = step;
+    state.notice = null;
+    state.codeShown = false;   // every arrival at the panel starts masked
+    state.prefilled = false;
+    renderModal();
+  }
+
+  /* Put back what they already told us. The order is on the server with the
+     name and address in it, so asking for them a second time is asking twice
+     for no reason — and the piece is held either way.
+
+     Only empty fields are touched, and only once per arrival at the step, so a
+     re-render mid-typing cannot overwrite what is being typed. */
+  function prefillDetails() {
+    var o = heldOrder();
+    if (!o || state.prefilled) return null;
+    state.prefilled = true;
+    [["fName", o.name], ["fEmail", o.email], ["fX", o.x], ["fTg", o.tg]].forEach(function (pair) {
+      var input = field(pair[0]);
+      if (input && !input.value && pair[1]) input.value = pair[1];
+    });
+    return o;
+  }
+  function setNotice(tone, text) {
+    state.notice = text ? { tone: tone, text: text } : null;
+    renderModal();
+  }
 
   function eyebrow(t) { return el("p", { class: "eyebrow", text: t }); }
   function title(t) { return el("h3", { id: "modalTitle", text: t }); }
-  function ghostClose() {
-    var b = el("button", { class: "btn-ghost", type: "button", text: "Close" });
+  function ghostClose(label) {
+    var b = el("button", { class: "btn-ghost", type: "button", text: label || "Close" });
     b.addEventListener("click", function () { setModal(null); });
     return b;
   }
-
-  function finish() {
-    var handle = (lastOrder && lastOrder.x) || "anon";
-    state.buyers = [handle].concat(state.buyers);
-    renderReserve();
-    renderLeaderboard();
-    setModal("done");
+  /* Signing out. A shared laptop, a borrowed phone, or simply someone who does
+     not want a live session sitting in a browser they are about to hand back —
+     and until now there was no way to end one. Clears the cookie, drops what we
+     cached about the wallet, and asks the extension to forget the approval too,
+     so the next connect actually prompts instead of silently signing in again. */
+  function disconnect() {
+    api("POST", "/api/session/logout").catch(function () {});
+    try { if (state.provider && state.provider.disconnect) state.provider.disconnect(); } catch (e) {}
+    state.wallet = null;
+    state.walletName = null;
+    state.provider = null;
+    state.myOrders = [];
+    state.order = null;
+    state.payment = null;
+    state.signature = null;
+    setModal(null);
+    loadState();
   }
+
+  /* Close on one side, sign out on the other. Present on every step that has a
+     session behind it, so leaving is never harder than arriving. */
+  function panelFoot(closeLabel) {
+    var out = el("button", { class: "btn-ghost", type: "button", text: "Disconnect" });
+    out.addEventListener("click", disconnect);
+    return el("div", { class: "panel-foot" }, [ghostClose(closeLabel), out]);
+  }
+
+  function noticeNode() {
+    if (!state.notice) return null;
+    if (state.notice.tone === "busy") {
+      return el("p", { class: "status" }, [el("i", { class: "spinner" }), el("span", { text: state.notice.text })]);
+    }
+    return el("p", { class: "alert" + (state.notice.tone === "calm" ? " calm" : ""), text: state.notice.text });
+  }
+  function walletChip() {
+    if (!state.wallet) return null;
+    return el("div", { class: "wallet-chip" }, [
+      el("i", {}),
+      el("span", { text: (state.walletName ? state.walletName + " · " : "") + state.wallet.slice(0, 4) + "…" + state.wallet.slice(-4) })
+    ]);
+  }
+
+  /* A cancelled wallet prompt is the commonest outcome of all and is not an
+     error — say so plainly, so nobody thinks their money is in limbo. */
+  function walletError(e, name) {
+    var msg = (e && e.message) || "";
+    if ((e && e.code === 4001) || /reject|denied|declin|cancel/i.test(msg)) {
+      return "You cancelled that in " + (name || "your wallet") + ". Nothing has been charged.";
+    }
+    if (/insufficient|0x1$/i.test(msg)) {
+      return "That wallet does not hold enough USDC, or enough SOL for the network fee.";
+    }
+    return msg || "Something went wrong talking to " + (name || "your wallet") + ".";
+  }
+
+  /* ---------- step one: connect ---------- */
+
+  function connectWallet(w) {
+    var provider = w.find();
+    if (!provider) { window.open(w.url, "_blank", "noopener"); return; }
+
+    state.busy = true;
+    state.walletName = w.name;
+    state.provider = provider;
+    setNotice("busy", "Approve the connection in " + w.name + "…");
+
+    Promise.resolve(provider.connect())
+      .then(function (res) {
+        var pk = (res && res.publicKey) || provider.publicKey;
+        if (!pk) throw new Error("That wallet did not hand back an address.");
+        var address = pk.toString();
+        return api("POST", "/api/session/nonce", { pubkey: address }).then(function (n) {
+          setNotice("busy", "Sign the message to prove the wallet is yours. It moves no funds.");
+          var bytes = new TextEncoder().encode(n.message);
+          return Promise.resolve(provider.signMessage(bytes, "utf8")).then(function (sig) {
+            // Phantom returns { signature }, Solflare returns the bytes directly.
+            var raw = sig && sig.signature ? sig.signature : sig;
+            return api("POST", "/api/session/verify", {
+              pubkey: address, signature: b58(raw), nonce: n.nonce, issuedAt: n.issuedAt
+            });
+          });
+        });
+      })
+      .then(function (out) {
+        state.busy = false;
+        state.wallet = out.wallet;
+        applyState(out.state);
+        /* Someone coming back to a wallet that already bought lands on their
+           pass, not on an order form for a piece they cannot buy twice. */
+        state.myOrders = out.orders || [];
+        var paid = paidOrder();
+        if (paid) { state.order = paid; return setModal("done"); }
+        setModal("details");
+      })
+      .catch(function (e) {
+        state.busy = false;
+        state.provider = null;
+        setNotice("warn", walletError(e, w.name));
+      });
+  }
+
+  /* A session restored from the cookie knows the address but not which extension
+     it came from: connect() only ever runs in connectWallet(), and a returning
+     visitor never goes through it. Without this the page knows who you are and
+     still cannot ask your wallet for anything — which showed up as the pay
+     button doing nothing at all.
+
+     onlyIfTrusted reconnects without a prompt when the site is already approved,
+     which it is for anyone who signed in earlier. A wallet that answers with a
+     different address is not ours; it is ignored rather than trusted. */
+  function reattachWallet() {
+    if (state.provider) return Promise.resolve(state.provider);
+    if (!state.wallet) return Promise.resolve(null);
+    return Promise.all(WALLETS.map(function (w) {
+      var p = w.find();
+      if (!p || typeof p.connect !== "function") return Promise.resolve(null);
+      return Promise.resolve(p.connect({ onlyIfTrusted: true }))
+        .then(function (res) {
+          var pk = (res && res.publicKey) || p.publicKey;
+          if (!pk || String(pk) !== state.wallet) return null;
+          return { provider: p, name: w.name };
+        })
+        .catch(function () { return null; });
+    })).then(function (found) {
+      var hit = found.filter(Boolean)[0];
+      if (hit) { state.provider = hit.provider; state.walletName = hit.name; }
+      return state.provider;
+    });
+  }
+
+  /* ---------- step three: pay ---------- */
+
+  function b64ToBytes(b64) {
+    var bin = atob(b64), out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  function pay() {
+    if (!state.payment) {
+      return setNotice("warn", "We lost track of that payment. Close this and press Reserve again — your piece is still held.");
+    }
+    /* Never a silent return. If the wallet is not attached — a reload, another
+       tab — try to reattach, and if that fails say so and offer the way back.
+       This used to be `if (!state.provider) return`, which read to a buyer as a
+       dead button. */
+    if (!state.provider) {
+      state.busy = true;
+      setNotice("busy", "Reconnecting your wallet…");
+      return reattachWallet().then(function (p) {
+        state.busy = false;
+        if (p) return pay();
+        setModal("wallet");
+        setNotice("warn", "Your wallet is not connected in this tab. Connect it again — your piece is still held.");
+      });
+    }
+    state.busy = true;
+    state.modal = "paying";
+    setNotice("busy", "Approve the payment in " + (state.walletName || "your wallet") + "…");
+
+    loadWeb3()
+      .then(function (web3) {
+        if (typeof state.provider.signAndSendTransaction !== "function") {
+          throw new Error((state.walletName || "That wallet") + " cannot send a transaction from this page.");
+        }
+        // The server built and signed nothing — it set the amount, the mint and
+        // the destination, and the wallet is only asked to approve them.
+        var tx = web3.Transaction.from(b64ToBytes(state.payment.transaction));
+        return state.provider.signAndSendTransaction(tx);
+      })
+      .then(function (res) {
+        var signature = String((res && res.signature) || res);
+        state.signature = signature;
+        setNotice("busy", "Payment sent. Waiting for the network to confirm…");
+        return confirmPayment(signature, 0);
+      })
+      .catch(function (e) {
+        state.busy = false;
+        state.modal = "pay";
+        setNotice("warn", walletError(e, state.walletName));
+      });
+  }
+
+  /* The wallet hands back a signature the instant it submits; our node may need
+     a few more seconds to serve that transaction back to us. A gap there is not
+     a failed payment, so keep asking before saying anything alarming. */
+  function confirmPayment(signature, attempt) {
+    return api("POST", "/api/orders/" + state.order.id + "/confirm", { signature: signature })
+      .then(function (out) {
+        state.busy = false;
+        state.order = out.order;
+        state.signature = null;
+        /* Keep the cache in step, or closing the panel and pressing Reserve
+           again in the same session offers an order form for a piece they have
+           just bought. */
+        state.myOrders = [out.order].concat(
+          (state.myOrders || []).filter(function (o) { return o.id !== out.order.id; })
+        );
+        if (out.state) applyState(out.state);
+        setModal("done");
+      })
+      .catch(function (e) {
+        /* Six tries against the server's own six-second poll is about a minute
+           of waiting. Past that, a payment that has not appeared is not going
+           to appear on this page — it needs reconciling by hand, and the buyer
+           needs the signature in front of them rather than another spinner. */
+        if (e.retryable && attempt < 6) {
+          setNotice("busy", "Payment sent. Waiting for the network to confirm…");
+          return new Promise(function (r) { setTimeout(r, 3000); })
+            .then(function () { return confirmPayment(signature, attempt + 1); });
+        }
+        state.busy = false;
+        state.modal = "pay";
+        setNotice("warn", e.message);
+      });
+  }
+
+  /* ---------- the pickup code ----------
+
+     At the counter this code is what gets someone handed a kimono, so it is a
+     bearer token for a physical object and is treated like one: masked until
+     asked for, and the QR — the same code in another form — is not fetched
+     until then either, so a glance at the screen catches nothing.
+
+     One thing works in the buyer's favour here. Since there is no page that
+     trades a code for an order, the code on its own does not say whose it is.
+     Staff asking for a name is a genuine second check: it is in the ledger and
+     a passer-by does not have it. */
+
+  function pickupBlock(o) {
+    var shown = state.codeShown;
+    var qrBox = el("div", { class: "qr" });
+
+    var codeEl = el("p", {
+      class: shown ? "code" : "code masked",
+      text: shown ? o.pickupCode : "••••-••••",
+      "aria-label": shown ? "Pickup code " + o.pickupCode : "Pickup code, hidden"
+    });
+
+    var toggle = el("button", {
+      class: "reveal", type: "button",
+      text: shown ? "Hide" : "Show code",
+      "aria-expanded": shown ? "true" : "false"
+    });
+    toggle.addEventListener("click", function () {
+      state.codeShown = !state.codeShown;
+      renderModal();
+    });
+
+    /* Two short lines, not a paragraph. The warning only works if it is read,
+       and five lines of it on a confirmation screen is five lines nobody reads.
+       The "lost it" sentence used to appear here and again as a row below. */
+    var kids = [
+      el("p", { class: "lbl", text: "Collect at Breakpoint" }),
+      el("div", { class: "code-row" }, [codeEl, toggle]),
+      el("p", {
+        class: "keepsafe",
+        html: "<b>Keep this like a ticket.</b> Anyone who reads it can collect piece " + o.piece +
+              " — screenshot it, do not post it. No wallet or signal needed at the counter."
+      })
+    ];
+
+    /* Only load the QR once the code is out — it encodes the same string, so
+       showing it while the code is masked would give the mask nothing to do. */
+    if (shown && o.qrUrl) {
+      // POST, and the code is not in the path: a pickup code has no business in
+      // a URL, where it would reach browser history, access logs and Referer.
+      fetch(apiUrl(o.qrUrl), { method: "POST", credentials: CREDENTIALS })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (svg) { if (svg) qrBox.innerHTML = svg; })
+        .catch(function () { qrBox.remove(); });
+    }
+
+    return el("div", { class: "pass" }, shown ? [qrBox, el("div", {}, kids)] : [el("div", {}, kids)]);
+  }
+
+  /* ---------- the panel ---------- */
 
   function renderModal() {
     if (!state.modal) { modal.hidden = true; return; }
     modal.hidden = false;
     panel.textContent = "";
+    var notice;
 
-    if (state.modal === "details") {
-      panel.appendChild(eyebrow("Step one"));
+    if (state.modal === "wallet") {
+      panel.appendChild(eyebrow("Step one of three"));
+      panel.appendChild(title("Connect a wallet"));
+      panel.appendChild(el("p", { class: "footnote", text: "You will sign a message to prove the wallet is yours. No payment is approved here." }));
+      WALLETS.forEach(function (w) {
+        var installed = !!w.find();
+        var b = el("button", { class: "wallet-btn", type: "button", disabled: state.busy ? "" : null }, [
+          el("span", { text: w.name }),
+          installed
+            ? el("span", { style: "opacity:.5", text: "→" })
+            : el("span", { class: "tag", text: "Install ↗" })
+        ]);
+        b.addEventListener("click", function () { connectWallet(w); });
+        panel.appendChild(b);
+      });
+      if ((notice = noticeNode())) panel.appendChild(notice);
+      var noWallet = el("button", { class: "btn-ghost", type: "button", text: "I cannot use a wallet" });
+      noWallet.addEventListener("click", function () { setModal("nowallet"); });
+      panel.appendChild(noWallet);
+
+    } else if (state.modal === "checking") {
+      panel.appendChild(eyebrow("One moment"));
+      panel.appendChild(title("Looking up your wallet."));
+      panel.appendChild(el("p", { class: "status" }, [el("i", { class: "spinner" }), el("span", { text: "Checking what you already hold…" })]));
+      panel.appendChild(ghostClose());
+
+    } else if (state.modal === "details") {
+      panel.appendChild(eyebrow("Step two of three"));
       panel.appendChild(title("Your details"));
+      var chip = walletChip();
+      if (chip) panel.appendChild(chip);
+      if ((notice = noticeNode())) panel.appendChild(notice);
       // The form lives in #formHolder and is adopted by the panel, so its
       // validation wiring survives every re-render.
       orderForm.hidden = false;
       panel.appendChild(orderForm);
 
-    } else if (state.modal === "wallet") {
-      panel.appendChild(eyebrow("Step two"));
-      panel.appendChild(title("Connect a wallet"));
-      WALLETS.forEach(function (w) {
-        var b = el("button", { class: "wallet-btn", type: "button" }, [
-          el("span", { text: w }),
-          el("span", { style: "opacity:.5", text: "→" })
-        ]);
-        b.addEventListener("click", function () { state.wallet = w; setModal("pay"); });
-        panel.appendChild(b);
-      });
-      // The handoff requires a path for buyers who cannot use a wallet.
-      var noWallet = el("button", { class: "btn-ghost", type: "button", text: "I cannot use a wallet" });
-      noWallet.addEventListener("click", function () { setModal("formdone"); });
-      panel.appendChild(noWallet);
-
-    } else if (state.modal === "pay") {
-      panel.appendChild(eyebrow("Step three"));
-      panel.appendChild(title("Pay 300"));
-      panel.appendChild(el("div", { style: "font-size:11.5px;opacity:.5", text: state.wallet + " · 7xKp…3rQm" }));
-      var pays = el("div", { style: "display:flex;gap:12px" });
-      ["300 USDC", "300 USDT"].forEach(function (label) {
-        var b = el("button", { class: "btn-outline", type: "button", style: "flex:1;letter-spacing:.24em;padding:17px", text: label });
-        b.addEventListener("click", finish);
-        pays.appendChild(b);
-      });
-      panel.appendChild(pays);
-      // The X handle already came from step one — no need to ask twice.
-      if (lastOrder && lastOrder.x) {
+      var held = prefillDetails();
+      if (held && held.holdExpiresAt) {
         panel.appendChild(el("p", {
           class: "footnote",
-          text: "Your order card will be made out to @" + lastOrder.x + "."
+          text: "Picking up where you left off — piece held until " +
+            new Date(held.holdExpiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + "."
+        }));
+      }
+      panel.appendChild(panelFoot());
+
+    } else if (state.modal === "pay" || state.modal === "paying") {
+      panel.appendChild(eyebrow("Step three of three"));
+      panel.appendChild(title("Pay " + state.priceUsdc + " USDC"));
+
+      panel.appendChild(el("div", { class: "pay-sum" }, [
+        el("span", { class: "amt", text: state.priceUsdc + " USDC" }),
+        el("span", { class: "who", text: (state.walletName || "Your wallet") + "\n" + (state.wallet || "").slice(0, 4) + "…" + (state.wallet || "").slice(-4) })
+      ]));
+
+      if (state.payment && state.payment.balanceShort) {
+        panel.appendChild(el("p", {
+          class: "alert",
+          text: "This wallet holds " + (state.payment.balanceUsdc || 0).toFixed(2) +
+                " USDC. Top it up to " + state.priceUsdc + " before approving."
         }));
       }
 
+      if ((notice = noticeNode())) panel.appendChild(notice);
+
+      /* A payment that went out but did not verify must never lose its
+         signature — it is the buyer's only proof until we reconcile it. */
+      if (state.signature && state.modal === "pay") {
+        panel.appendChild(el("div", { class: "ordrow" }, [
+          el("span", { text: "Your transaction" }),
+          el("span", { style: "font-family:ui-monospace,Menlo,monospace;font-size:11px", text: state.signature })
+        ]));
+      }
+
+      if (state.modal === "pay") {
+        var payBtn = el("button", {
+          class: "btn-invert", type: "button",
+          text: state.signature ? "Check again" : "Pay " + state.priceUsdc + " USDC"
+        });
+        payBtn.addEventListener("click", function () {
+          if (state.signature) {
+            state.busy = true;
+            setNotice("busy", "Asking the network again…");
+            confirmPayment(state.signature, 0);
+          } else pay();
+        });
+        panel.appendChild(payBtn);
+        if (state.order && state.order.holdExpiresAt) {
+          panel.appendChild(el("p", {
+            class: "footnote",
+            text: "Your piece is held until " +
+              new Date(state.order.holdExpiresAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) + "."
+          }));
+        }
+        panel.appendChild(panelFoot());
+      }
+
     } else if (state.modal === "done") {
-      var shownHandle = lastOrder && lastOrder.x ? "@" + lastOrder.x : "@you";
+      var o = state.order || {};
+      var shownHandle = o.x ? "@" + o.x : "@you";
       panel.appendChild(eyebrow("Reserved"));
-      panel.appendChild(title("Your piece is held."));
+      panel.appendChild(title("Piece " + o.piece + " is yours."));
+
       // The rendered card carries the garment and the wordmark; the DOM row below
       // carries the part that changes, so it stays crisp at any panel width.
       panel.appendChild(el("div", { class: "card-frame" }, [
         el("img", {
-          class: "card-art", src: "web/share-card.jpg", alt: "The 2026 Breakpoint Kimono — reserved",
+          class: "card-art", src: "/web/share-card.jpg", alt: "The 2026 Breakpoint Kimono — reserved",
           width: "1200", height: "600"
         }),
         el("div", { class: "card-meta" }, [
           el("span", { class: "lbl", text: "Your order card" }),
-          el("span", { class: "who", text: shownHandle + " · piece " + count() + " of 15" })
+          el("span", { class: "who", text: shownHandle + " · piece " + o.piece + " of " + state.cap })
         ])
       ]));
+
+      if (o.pickupCode) panel.appendChild(pickupBlock(o));
+
+      /* Two rows, not three. The amount and the link to it are one fact, and
+         the panel was tall enough to need scrolling on any laptop under 900px.
+         The address still gets named back on its own line, because that is
+         where a typo surfaces. */
+      var rows = el("div", {});
+      if (o.email) rows.appendChild(el("div", { class: "ordrow" }, [
+        el("span", { text: "Confirmation to" }), el("span", { text: o.email })
+      ]));
+      var paid = el("span", { text: (o.amountUsdc || state.priceUsdc) + " USDC" });
+      if (o.explorer) {
+        paid = el("span", {}, [
+          el("span", { text: (o.amountUsdc || state.priceUsdc) + " USDC" }),
+          el("span", { style: "opacity:.3;padding:0 8px", text: "·" }),
+          el("a", { href: o.explorer, target: "_blank", rel: "noopener", text: "on chain ↗" })
+        ]);
+      }
+      rows.appendChild(el("div", { class: "ordrow" }, [el("span", { text: "Paid" }), paid]));
+      panel.appendChild(rows);
+
       var post = el("button", { class: "btn-invert", type: "button", text: "Post on X" });
       post.addEventListener("click", function () {
         // The URL is what makes X render the card — text alone unfurls nothing.
-        var piece = count();
-        var msg = "Reserved my Breakpoint Kimono — piece " + piece + " of 15.";
+        var msg = "Reserved my Breakpoint Kimono — piece " + o.piece + " of " + state.cap + ".";
         window.open("https://x.com/intent/tweet?text=" + encodeURIComponent(msg) +
                     "&url=" + encodeURIComponent(SHARE_URL), "_blank");
       });
-      panel.appendChild(el("p", {
-        class: "preview-note",
-        text: "This is a preview of the presale. No payment was taken and no piece is held — write to @shizudio to reserve one."
-      }));
       panel.appendChild(post);
-      panel.appendChild(ghostClose());
+      panel.appendChild(panelFoot("Done"));
 
-    } else if (state.modal === "formdone") {
-      panel.appendChild(eyebrow("Received"));
-      panel.appendChild(title("Request received."));
-      // Name the account back to them, so a typo is caught here rather than in silence.
-      var reach = lastOrder && lastOrder.email ? lastOrder.email : "the address you left";
+    } else if (state.modal === "nowallet") {
+      panel.appendChild(eyebrow("Another way"));
+      panel.appendChild(title("We can take it by hand."));
       panel.appendChild(el("p", {
         style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
-        html: 'We confirm your piece and send payment details to ' +
-              '<span style="opacity:1">' + esc(reach) + '</span>, within a day. Questions → ' +
-              '<a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>'
+        html: 'Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> ' +
+              'and we will hold a piece and send payment details. Pieces held this way come out of the same fifteen.'
       }));
       panel.appendChild(ghostClose());
     }
 
-    var first = panel.querySelector("button, input");
+    var first = panel.querySelector("button:not([disabled]), input");
     if (first) first.focus();
   }
 
   Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
-    b.addEventListener("click", function () { setModal("details"); });
+    b.addEventListener("click", function () {
+      // Warm the payment library while they are reading the wallet list.
+      loadWeb3().catch(function () {});
+      if (!state.wallet) return setModal("wallet");
+      /* Signed in already, so ask what this wallet holds before offering
+         anything. The cached answer can be stale — a piece bought in another
+         tab, or earlier in this session — and guessing wrong means handing
+         someone an order form for a piece they already own. A spinner for one
+         request beats showing the wrong panel and correcting it. */
+      setModal("checking");
+      refreshMyOrders().then(function () {
+        if (state.modal !== "checking") return;   // they closed it while we asked
+        var paid = paidOrder();
+        if (paid) { state.order = paid; return setModal("done"); }
+        setModal("details");
+      });
+    });
   });
 
   /* ---------- order form ---------- */
@@ -781,12 +1404,18 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     else input.removeAttribute("aria-invalid");
   }
 
+  /* Scoped to the form, not the document. Between showings the panel is cleared
+     and the form lives detached — held only by this variable — so a
+     document-wide lookup would come back null the moment anything reads the
+     fields outside an open panel. */
+  var field = function (id) { return orderForm.querySelector("#" + id); };
+
   function readForm() {
     return {
-      name: $("#fName").value.trim(),
-      email: $("#fEmail").value.trim(),
-      x: normHandle($("#fX").value),
-      tg: normHandle($("#fTg").value)
+      name: field("fName").value.trim(),
+      email: field("fEmail").value.trim(),
+      x: normHandle(field("fX").value),
+      tg: normHandle(field("fTg").value)
     };
   }
 
@@ -803,7 +1432,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   ["fName", "fEmail", "fX", "fTg"].forEach(function (id) {
-    var input = $("#" + id);
+    var input = field(id);
     // Re-validate only once a field has been marked, so we never scold mid-typing.
     input.addEventListener("input", function () {
       var row = input.closest(".field-row");
@@ -820,8 +1449,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     ["name", "email", "x", "tg"].forEach(function (k) { setError(k, errs[k] || ""); });
   }
 
+  var submitBtn = orderForm.querySelector('button[type="submit"]');
+
   orderForm.addEventListener("submit", function (e) {
     e.preventDefault();
+    if (state.busy) return;
     var v = readForm();
     var errs = validate(v);
     if (Object.keys(errs).length) {
@@ -831,12 +1463,44 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       return;
     }
     showErrors({});
-    $("#fX").value = v.x;
-    $("#fTg").value = v.tg;
-    /* No backend yet. The order is not recorded anywhere — see README. When the
-       reservation API lands, POST { name, x, tg } here and only then advance. */
-    lastOrder = v;
-    setModal("wallet");
+    field("fX").value = v.x;
+    field("fTg").value = v.tg;
+
+    /* This is where a piece is actually taken off the board. The server checks
+       the cap, writes a pending order against the signed-in wallet and builds
+       the transaction; the hold lapses on its own if the payment never comes. */
+    state.busy = true;
+    submitBtn.disabled = true;
+    setNotice("busy", "Holding a piece for you…");
+
+    api("POST", "/api/orders", v)
+      .then(function (out) {
+        state.busy = false;
+        submitBtn.disabled = false;
+        state.order = out.order;
+        state.payment = out;
+        state.signature = null;
+        setModal("pay");
+      })
+      .catch(function (err) {
+        state.busy = false;
+        submitBtn.disabled = false;
+        if (err.code === "NO_SESSION") {
+          // The session lapsed between connecting and submitting.
+          state.wallet = null;
+          setModal("wallet");
+          setNotice("warn", "Your connection timed out. Connect again — nothing was lost.");
+          return;
+        }
+        if (err.fields) {
+          // The server's own validation, shown on the same fields as ours.
+          showErrors(err.fields);
+          setNotice("warn", err.message);
+          return;
+        }
+        if (err.code === "SOLD_OUT" || err.code === "PRESALE_OVER") loadState();
+        setNotice("warn", err.message);
+      });
   });
 
   /* ---------- turntable: scroll lock + scrub ---------- */
@@ -973,12 +1637,26 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   /* ---------- go ---------- */
+  /* Render from the defaults first so the hero has a shape to hold during the
+     loader, then let the server's numbers land on top. The turntable does not
+     wait on the network for anything. */
   renderReserve();
   renderLeaderboard();
   renderMarquee();
   renderFaq();
   startMarquee();
   drive();
+
+  loadState();
+  /* The run is fifteen pieces and the page is left open on desks. A slow poll
+     keeps the count honest for someone who has been looking at it for an hour,
+     and pauses while the tab is hidden. */
+  setInterval(function () {
+    if (!document.hidden && !state.modal) loadState();
+  }, 45000);
+  document.addEventListener("visibilitychange", function () {
+    if (!document.hidden && !state.modal) loadState();
+  });
 })();
 </script>
 </body>

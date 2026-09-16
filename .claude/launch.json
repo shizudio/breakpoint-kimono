@@ -3,8 +3,16 @@
   "configurations": [
     {
       "name": "kimono",
-      "runtimeExecutable": "npx",
-      "runtimeArgs": ["-y", "serve", "-l", "4321", "site"],
+      "comment": "The front end. It proxies /api and /admin to the API, so run `npm run server` alongside it or every call 404s — the counts stay at their fallbacks and Reserve fails.",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "port": 5173
+    },
+    {
+      "name": "kimono-api",
+      "comment": "The API and /admin. Serves no page: / is a 404 by design.",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "server"],
       "port": 4321
     }
   ]
