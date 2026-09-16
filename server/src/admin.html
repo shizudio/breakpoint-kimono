@@ -374,11 +374,49 @@ label{display:block;font-size:9.5px;letter-spacing:.28em;text-transform:uppercas
     askToCollect(o, btn);
   }
 
+  /* The address, plus whether the confirmation actually reached it. A buyer who
+     turns up with nothing on their phone is the case this line is here for: it
+     says in one glance whether to resend or to look up the code by name.
+
+     Resending needs no confirmation dialog the way handing over a kimono does —
+     it is repeatable and it only ever goes to the address in the ledger — but
+     it does go to a real inbox, so the button says who it is about to mail. */
+  function emailCell(o) {
+    var box = el("span", {}, [el("span", { text: o.email })]);
+    if (o.status !== "paid") return box;
+
+    box.appendChild(el("span", {
+      class: "muted",
+      text: o.emailed ? "  · sent" : "  · not sent"
+    }));
+
+    var btn = el("button", {
+      class: "tog", type: "button", style: "margin-left:8px",
+      text: o.emailed ? "Resend" : "Send"
+    });
+    btn.addEventListener("click", function () {
+      btn.disabled = true;
+      btn.textContent = "Sending…";
+      api("/api/admin/email", { method: "POST", body: JSON.stringify({ id: o.id }) })
+        .then(function (b) {
+          btn.textContent = "Sent to " + b.to;
+          setTimeout(load, 1200);
+        })
+        .catch(function (e) {
+          btn.disabled = false;
+          btn.textContent = o.emailed ? "Resend" : "Send";
+          $("#err").textContent = e.message;
+        });
+    });
+    box.appendChild(btn);
+    return box;
+  }
+
   function orderRow(o, big) {
     var who = el("div", { class: "who" }, [
       el("div", {}, [el("b", { text: o.name }), el("span", { class: "muted", text: o.x ? "  @" + o.x : "" })]),
       el("div", { class: "meta" }, [codeCell(o)]),
-      el("div", { class: "meta", text: o.email }),
+      el("div", { class: "meta" }, [emailCell(o)]),
       el("div", { class: "meta" }, [walletCell(o)]),
       el("div", { class: "meta", text: (o.status === "paid" ? "paid " + when(o.paidAt) : when(o.createdAt)) }),
       el("div", { style: "margin-top:6px" }, [statusPill(o)])

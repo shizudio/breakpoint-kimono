@@ -98,6 +98,57 @@ if (!config.telegramToken || !config.telegramChat) {
   } catch (e) { bad("could not reach Telegram", e.message); }
 }
 
+console.log("\nemail");
+if (!config.resendKey || !config.emailFrom) {
+  warn("buyer confirmations are off", "set RESEND_API_KEY and EMAIL_FROM to email each buyer their pickup pass");
+} else {
+  /* The from-address is where this goes silently wrong. Resend accepts the
+     request and rejects the send when the domain is not verified, so the buyer
+     hears nothing and the only trace is an email.failed event nobody reads. */
+  var fromAddr = (config.emailFrom.match(/<([^>]+)>/) || [null, config.emailFrom])[1].trim();
+  var fromDomain = fromAddr.split("@")[1] || "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(fromAddr)) {
+    bad("EMAIL_FROM is not an address", config.emailFrom + ' — use "Name <you@domain>" or just you@domain');
+  } else {
+    try {
+      var dr = await fetch("https://api.resend.com/domains", {
+        headers: { authorization: "Bearer " + config.resendKey }
+      });
+      if (dr.status === 401 || dr.status === 403) bad("RESEND_API_KEY is not valid", "check resend.com → API Keys");
+      else if (!dr.ok) warn("could not list Resend domains", "HTTP " + dr.status + " — the key may be restricted to sending");
+      else {
+        var doms = (await dr.json()).data || [];
+        var mine = doms.filter(function (d) { return d.name === fromDomain; })[0];
+        if (!mine) bad("EMAIL_FROM is on a domain Resend does not know", fromDomain + " — add it at resend.com → Domains");
+        else if (mine.status !== "verified") bad("the sending domain is not verified", fromDomain + " is " + mine.status + " — finish the DNS records");
+        else ok("sending domain verified", fromDomain);
+      }
+    } catch (e) { bad("could not reach Resend", e.message); }
+
+    /* One real send, end to end, to an address of yours — the same path a
+       buyer's confirmation takes, including the QR attachment. */
+    var testTo = config.emailBcc || config.emailReplyTo;
+    if (!testTo) warn("no test send", "set EMAIL_BCC or EMAIL_REPLY_TO and re-check to have one delivered to you");
+    else {
+      try {
+        var er = await fetch("https://api.resend.com/emails", {
+          method: "POST",
+          headers: { "content-type": "application/json", authorization: "Bearer " + config.resendKey },
+          body: JSON.stringify({
+            from: config.emailFrom, to: [testTo],
+            subject: "Pre-flight check — buyer confirmations are working",
+            text: "This is the pre-flight check. Buyer confirmations will go out from " +
+                  config.emailFrom + " and land like this one."
+          })
+        });
+        if (!er.ok) bad("Resend refused a send", (await er.text()).slice(0, 200));
+        else ok("test email delivered", "look in " + testTo);
+      } catch (e) { bad("could not send through Resend", e.message); }
+    }
+  }
+  if (!config.emailBcc) warn("EMAIL_BCC is empty", "with it set you keep a copy of every pass a buyer was sent");
+}
+
 console.log("\nledger");
 try {
   store.expireStaleHolds();

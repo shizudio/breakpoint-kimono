@@ -11,7 +11,7 @@ A fifteen-piece run, sold for 300 USDC on Solana. Two apps:
         assets/         岩花 seal
 
     server/             the API — Node, no framework
-      src/              routes, ledger, chain, sign-in, notifications
+      src/              routes, ledger, chain, sign-in, notifications, email
       test/             the suite; `npm test`
       .env              secrets. NOT in git. Copy .env.example.
 
@@ -85,6 +85,9 @@ therefore public by definition.
 | `SESSION_SECRET` | `openssl rand -hex 32`. Rotating it signs everyone out. |
 | `ADMIN_WALLETS` | Solana addresses, comma-separated, that may open `/admin`. |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID` | Optional. Blank disables notifications; orders still record. |
+| `RESEND_API_KEY`, `EMAIL_FROM` | Optional. Blank disables the buyer's confirmation email; orders still record. |
+| `EMAIL_REPLY_TO`, `EMAIL_BCC` | Where a reply lands, and your own copy of every pass sent. |
+| `EMAIL_CARD_IMAGE` | The order card in the email. Empty reads `site/public/web/share-card.jpg`. |
 | `SITE_DIR` | Empty: API only. `../dist`: also serve the built front end. |
 | `ALLOWED_ORIGINS` | Only for the cross-origin mode above. |
 | `PUBLIC_ORIGIN` | Used in the pickup QR. |
@@ -117,6 +120,61 @@ Then message **@userinfobot** for your numeric id into `TELEGRAM_CHAT_ID`.
 **Send your new bot a message first** — a bot cannot open a conversation, so
 until you do, every send fails with "chat not found". `npm run server:check`
 sends a test message and says so if this is the problem.
+
+### The buyer's confirmation email
+
+Telegram tells **you** about a sale. This tells the **buyer**, and it is the only
+thing in the system that reaches them without them coming back to the site.
+
+It goes out the moment a payment verifies, and it is **the confirmation panel,
+posted**: the same eyebrow and title, the same order card with the garment and
+the wordmark across it, the same code beside the same QR, the same purple rule
+down the warning, the same two rows underneath. A buyer should not have to
+wonder whether the email and the screen came from the same people.
+
+Both images are attached rather than linked. A remote `<img>` would depend on
+the front end being up and on the same origin as the API — which it is not in
+the split deployment — and a client that blocks remote images would leave a hole
+where the card is. The QR target is built in `src/qr.js`, which is also where the
+panel's SVG comes from: if those two ever encoded different strings the failure
+would surface at the counter and nowhere earlier, so they are one function.
+
+The panel builds its greys as `rgba()` over black, which Outlook will not do, so
+`email.js` precomputes each one against `#000` at the opacity the stylesheet
+uses. Those constants and `site/index.html` have to move together — an email
+cannot read the page's custom properties. `npm run email:preview` writes the
+real template to a file so you can open it in a browser before anyone gets it.
+
+Same contract as Telegram: fire-and-forget, never awaited, never able to fail an
+order. A send that fails leaves an `email.failed` event on the order and nothing
+else — the buyer still has the pass on screen, and can always reopen it with the
+wallet that paid.
+
+**Sending twice is refused.** A buyer who reloads the confirm step, or a retry
+after a network blip, must not mean a second copy of the same pass in their
+inbox, so `sendConfirmation` asks the event log whether it has sent before. The
+one way past that guard is the **Resend** button on `/admin`, which every paid
+row carries next to the address, along with whether the confirmation actually
+arrived — the first question worth answering when someone turns up with an empty
+phone. It mails the address in the ledger and nowhere else: an endpoint that took
+a destination would turn the ledger into a way to send a stranger's pickup code
+anywhere.
+
+Set up: **resend.com** → Domains → add yours and put in the DKIM/SPF records →
+API Keys → copy into `RESEND_API_KEY`. `EMAIL_FROM` must be on that verified
+domain. This is the failure worth knowing about, because it is silent: Resend
+accepts an unverified sender at the API and drops the send, so the buyer hears
+nothing. `npm run server:check` checks the domain is verified and delivers one
+real test email to `EMAIL_BCC`, so you find out before a buyer does.
+
+**What this costs in secrecy, deliberately.** A pickup code is a bearer token for
+a physical object, and everything else here keeps it out of URLs, logs and
+`Referer` headers on purpose. An inbox is none of those things: it gets
+forwarded, and it outlives the device it was read on. It is in the email anyway
+because the alternative — a buyer at a counter in a hall with no signal, asked to
+connect a wallet — fails more often and more visibly. The mitigation is at the
+counter rather than in the mail: **staff ask for a name**, and a name is in the
+ledger while a passer-by holding a forwarded email does not have one.
 
 ## How a payment actually works
 
@@ -357,6 +415,11 @@ session is not the same as holding an admin one.
 - `notify.test.js` — every Telegram message, against a local stand-in: what
   each one says, that a repeat scan sends nothing, and that a hand-over still
   completes when Telegram answers 500.
+- `email.test.js` — the buyer's confirmation, against a stand-in Resend: what
+  the payload carries, that the attachment is a real PNG referenced inline, that
+  the QR encodes the same fragment the panel's does, that a second send is
+  refused, that both images ride as attachments rather than remote URLs, and
+  that a provider answering 422 reports rather than throws.
 - `reconnect.test.js` — the returning visitor, in two page loads sharing one
   cookie: the session is recognised without signing in again, the wallet is
   reattached quietly, paying works after a reload, and a wallet that has

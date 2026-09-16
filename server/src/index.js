@@ -8,13 +8,14 @@
 import { createServer } from "node:http";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
-import QRCode from "qrcode";
 
 import { config, explorerTx } from "./config.js";
 import * as store from "./db.js";
 import { startSignIn, verifySignIn, mintToken, cookieHeader, walletFromRequest } from "./session.js";
 import { newReference, buildPaymentTransaction, verifyPayment, usdcBalance, rpcHealth, AMOUNT } from "./solana.js";
 import { notifyPaid, notifyOverflow, notifyCollected, notifyStartup, telegramEnabled } from "./telegram.js";
+import { sendConfirmation, emailEnabled } from "./email.js";
+import { pickupQrSvg } from "./qr.js";
 import { json, fail, readJson, validateOrder, rateLimit, clientIp, publicOrder } from "./util.js";
 import { serveStatic } from "./static.js";
 import { isSignature } from "./base58.js";
@@ -88,6 +89,7 @@ route("GET", /^\/api\/health$/, async function (req, res) {
     ok: true,
     network: config.network,
     telegram: telegramEnabled(),
+    email: emailEnabled(),
     rpc: await rpcHealth(),      // reports reachability, never the URL
     sold: store.paidCount(),
     cap: config.cap
@@ -233,6 +235,13 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
   }
 
   notifyPaid(paid);
+  /* Not awaited, and that is the whole point: the buyer's confirmation screen
+     does not wait on a mail provider. A send that fails leaves an email.failed
+     event on the order and the pass is still on screen and still behind the
+     wallet — nothing is lost but the convenience, and /admin can resend. */
+  sendConfirmation(paid).catch(function (e) {
+    console.error("[email] confirmation", e.message);
+  });
   json(res, 200, {
     order: publicOrder(paid, config.publicOrigin),
     explorer: explorerTx(signature),
@@ -267,14 +276,9 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/qr$/, async function (req, res
   if (!o || o.wallet !== wallet) return fail(res, 404, "NO_ORDER", "We cannot find that order.");
   if (o.status !== "paid" || !o.pickup_code) return fail(res, 409, "NOT_PAID", "That order has no pass yet.");
 
-  /* A fragment, not a query. Everything after "#" stays in the browser: it is
-     never sent to the server, never reaches a log or a proxy, and never rides
-     in a Referer header. The admin page reads it and clears it immediately. */
-  var target = config.publicOrigin + "/admin#c=" + encodeURIComponent(o.pickup_code);
-  var svg = await QRCode.toString(target, {
-    type: "svg", errorCorrectionLevel: "M", margin: 1,
-    color: { dark: "#0E0E0E", light: "#F7F4EE" }
-  });
+  /* The target is built in qr.js, so this image and the one attached to the
+     confirmation email always encode the same string. */
+  var svg = await pickupQrSvg(o);
   res.writeHead(200, {
     "content-type": "image/svg+xml; charset=utf-8",
     "cache-control": "no-store, private"
@@ -298,7 +302,11 @@ route("GET", /^\/api\/admin\/orders$/, async function (req, res) {
         x: o.x_handle, tg: o.tg_handle, wallet: o.wallet, pickupCode: o.pickup_code,
         signature: o.tx_signature, explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,
         createdAt: o.created_at, paidAt: o.paid_at, collectedAt: o.collected_at,
-        collectedBy: o.collected_by, notes: o.notes
+        collectedBy: o.collected_by, notes: o.notes,
+        /* Read off the event log rather than a column: "did they get the
+           email?" is the first thing asked when a buyer turns up with nothing
+           on their phone, and it should be answerable from this screen. */
+        emailed: o.status === "paid" ? store.hasEvent(o.id, "email.sent") : false
       };
     })
   });
@@ -325,6 +333,30 @@ route("POST", /^\/api\/admin\/collect$/, async function (req, res) {
     if (e.code === "NOT_PAID") return fail(res, 409, "NOT_PAID", "That order was never paid.");
     throw e;
   }
+});
+
+/* Resend a confirmation. Every send is best-effort by design, so there has to
+   be a way to try again — a bounced address corrected in person, a provider
+   that was down during the sale, a buyer who deleted it. Behind an admin wallet
+   like everything else here, and it sends to the address in the ledger and
+   nowhere else: an endpoint that took a destination would turn the ledger into
+   a way to mail a stranger's pickup code anywhere. */
+route("POST", /^\/api\/admin\/email$/, async function (req, res) {
+  var actor = requireAdmin(req, res);
+  if (!actor) return;
+  if (!emailEnabled()) return fail(res, 503, "EMAIL_OFF", "Email is not configured on this server.");
+  var b = await readJson(req);
+  var o = b.code ? store.getOrderByPickupCode(b.code) : store.getOrder(String(b.id || ""));
+  if (!o) return fail(res, 404, "NO_ORDER", "We cannot find that order.");
+  if (o.status !== "paid") return fail(res, 409, "NOT_PAID", "That order was never paid.");
+
+  var limit = rateLimit("resend:" + o.id, 5, 300000);
+  if (!limit.ok) return fail(res, 429, "RATE_LIMIT", "That pass has been resent five times in five minutes.");
+
+  var out = await sendConfirmation(o, { force: true });
+  if (!out.ok) return fail(res, 502, "SEND_FAILED", "The provider refused it: " + (out.detail || out.reason));
+  store.logEvent(o.id, "email.resent", actor);
+  json(res, 200, { ok: true, to: o.email });
 });
 
 route("GET", /^\/api\/admin\/events$/, async function (req, res) {
@@ -439,6 +471,7 @@ server.listen(config.port, function () {
   console.log("  price       " + config.priceUsdc + " USDC");
   console.log("  sold        " + sold + " / " + config.cap);
   console.log("  telegram    " + (telegramEnabled() ? "on" : "off (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)"));
+  console.log("  email       " + (emailEnabled() ? "on · from " + config.emailFrom : "off (set RESEND_API_KEY and EMAIL_FROM)"));
   console.log("  admin       " + config.publicOrigin + "/admin");
   console.log("  site        " + (config.siteDir
     ? "serving " + config.siteDir

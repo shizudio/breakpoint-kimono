@@ -161,6 +161,14 @@ export function recentEvents(limit) {
   return q("SELECT * FROM events ORDER BY id DESC LIMIT ?").all(limit || 100);
 }
 
+/* The events table is append-only, so it is also the record of what has already
+   been done to an order. The confirmation email asks it whether it has sent
+   before: a buyer who reloads the confirm step, or a retry after a network
+   blip, must not mean a second copy of the same pass in their inbox. */
+export function hasEvent(orderId, kind) {
+  return !!q("SELECT 1 FROM events WHERE order_id = ? AND kind = ? LIMIT 1").get(orderId, kind);
+}
+
 /* ---------- writes ---------- */
 
 function tx(fn) {

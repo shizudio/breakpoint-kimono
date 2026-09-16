@@ -56,6 +56,20 @@ export var config = {
   adminWallets: req("ADMIN_WALLETS").split(",").map(function (w) { return w.trim(); }).filter(Boolean),
   telegramToken: opt("TELEGRAM_BOT_TOKEN", ""),
   telegramChat: opt("TELEGRAM_CHAT_ID", ""),
+  /* The buyer's confirmation. Leave RESEND_API_KEY blank and nothing is sent —
+     orders still record, and the pass is still in the panel behind the wallet.
+     EMAIL_FROM must be on a domain verified with the provider, or every send is
+     rejected at the API and the buyer hears nothing. */
+  resendKey: opt("RESEND_API_KEY", ""),
+  emailFrom: opt("EMAIL_FROM", ""),
+  emailReplyTo: opt("EMAIL_REPLY_TO", ""),
+  /* An optional copy of every confirmation, to an address you control. Worth
+     setting: it is the only record of what the buyer was actually sent. */
+  emailBcc: opt("EMAIL_BCC", ""),
+  /* The order card shown in the confirmation email, attached rather than linked.
+     Empty uses site/public/web/share-card.jpg next to this checkout — set it
+     only if the two apps are deployed apart and that path does not exist. */
+  emailCardImage: opt("EMAIL_CARD_IMAGE", ""),
   dbPath: opt("DB_PATH", "../data/orders.db"),
   /* The front end is its own app now (`npm run start` at the repo root). This
      stays so a single-origin deployment can still hand out the built files —
