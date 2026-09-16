@@ -1,8 +1,8 @@
 # The Breakpoint Kimono — presale landing page
 
-A single static page. `site/` is the deploy root; there is no build step.
+A single static page. `public/` is the deploy root; there is no build step.
 
-    site/
+    public/
       index.html      the whole page (markup, styles, behaviour)
       frames-v2/      72-frame turntable sequence, f00–f71 (see note below)
       web/            photography + self-hosted portrait
@@ -14,7 +14,7 @@ Local preview:
 
 ## Before this takes real money
 
-Four things in `site/index.html` are still the prototype's simulation:
+Four things in `public/index.html` are still the prototype's simulation:
 
 1. **`PRESALE_ENDS`** (top of the script) is a hard-coded date. It is shared by
    every visitor — which is the fix for the prototype's per-visitor localStorage
@@ -148,7 +148,7 @@ handoff bundle had been downscaled to 1280×720, which the browser then upscaled
 1.3–1.7× on any Retina screen. That was the blur.
 
     ffmpeg -i source/video_new.mp4 -vf "fps=72/10.041667" \
-           -frames:v 72 -q:v 8 -start_number 0 site/frames-v2/f%02d.jpg
+           -frames:v 72 -q:v 8 -start_number 0 public/frames-v2/f%02d.jpg
 
 `-q:v 8` lands the set at 3.2MB, within a rounding error of the old 1280 set, so
 the loader's preload budget is unchanged for 2.25× the pixels. Going finer (q6,
@@ -165,13 +165,13 @@ ever needs to get lighter.
 
 ## Buyer avatars
 
-`site/web/avatar-<handle>.jpg`, 128×128 — self-hosted snapshots of the X profile
+`public/web/avatar-<handle>.jpg`, 128×128 — self-hosted snapshots of the X profile
 pictures, fetched once via unavatar.io and re-encoded. Nothing on the page calls
 a third party at runtime.
 
     curl -L "https://unavatar.io/x/<handle>" -o /tmp/a.jpg
     ffmpeg -i /tmp/a.jpg -vf "scale=128:128:flags=lanczos" -q:v 3 \
-           site/web/avatar-<handle>.jpg
+           public/web/avatar-<handle>.jpg
 
 Then add the handle to `AVATARS` in the script. Anyone missing from that map
 falls back to the initial on a tinted ground, which is the design's own
@@ -180,11 +180,11 @@ changes their picture, theirs goes stale until it is re-fetched.
 
 ## Share card
 
-`site/web/share-card.jpg` — 1200×600 (2:1), the shape `summary_large_image`
+`public/web/share-card.jpg` — 1200×600 (2:1), the shape `summary_large_image`
 wants. Generated from `source/thumbnail.png` (1774×887):
 
     ffmpeg -i source/thumbnail.png -vf "scale=1200:600:flags=lanczos" \
-           -q:v 3 site/web/share-card.jpg
+           -q:v 3 public/web/share-card.jpg
 
 Two bugs fixed alongside it, either of which alone meant **no card rendered at
 all**:
@@ -232,7 +232,7 @@ still leaves every returning visitor on the old render, out of their own disk
 cache, for up to a year — this already happened once going from the original
 master to `video_new.mp4`.
 
-To swap the video: extract into `site/frames-<next>/`, then update all three of
+To swap the video: extract into `public/frames-<next>/`, then update all three of
 `FRAMES_DIR` in the script, the hero `<img src>`, and the `headers` source in
 `vercel.json`. The script comment next to `FRAMES_DIR` says the same.
 
