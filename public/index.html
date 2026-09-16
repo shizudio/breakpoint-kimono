@@ -440,6 +440,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 
   var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  /* ?preview=soldout fills the run locally so the sold-out states can be walked
+     end to end without placing fourteen real orders. It never reads or writes
+     the database — postJSON becomes a no-op and the live refresh is skipped —
+     so nothing a preview session does can reach a real buyer list. */
+  var PREVIEW_SOLDOUT = /[?&]preview=soldout\b/.test(location.search);
+
   var state = {
     /* Real reservations, newest first. Everything on the page — the count, the
        fill bar, the proof line, the leaderboard and the sold-out state —
@@ -707,6 +713,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
      database actually holds rather than what this tab last saw. Falls back to
      the built-in list when storage is not configured yet. */
   function refresh() {
+    if (PREVIEW_SOLDOUT) return Promise.resolve();
     return fetch("/api/reservations", { cache: "no-store" })
       .then(function (r) { return r.json(); })
       .then(function (d) {
@@ -966,6 +973,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   /* The page must stay usable whether or not the API is reachable, so these are
      fire-and-forget: a failed write is logged, never shown as a dead end. */
   function postJSON(url, body) {
+    if (PREVIEW_SOLDOUT) {
+      console.info("[preview] suppressed", url, body);
+      return Promise.resolve({ ok: true, status: 200, json: function () { return Promise.resolve({}); } });
+    }
     try {
       return fetch(url, {
         method: "POST",
@@ -1114,6 +1125,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   /* ---------- go ---------- */
+  if (PREVIEW_SOLDOUT) {
+    var fillers = ["ayaverse", "soltaro", "ryu_dgn", "mika_sol", "0xkenji", "nori_eth",
+                   "haruspex", "kaito_sol", "mirae", "tonbo", "yuzuwave", "senri", "aoi_dev"];
+    while (state.buyers.length < PIECES) state.buyers.push(fillers[state.buyers.length - 2] || "anon");
+  }
   renderReserve();
   renderLeaderboard();
   refresh();

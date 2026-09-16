@@ -236,6 +236,15 @@ To swap the video: extract into `public/frames-<next>/`, then update all three o
 `FRAMES_DIR` in the script, the hero `<img src>`, and the `headers` source in
 `vercel.json`. The script comment next to `FRAMES_DIR` says the same.
 
+## Previewing the sold-out states
+
+    /?preview=soldout
+
+Fills the run to fifteen in the browser only, so all five sold-out scenarios can
+be walked without placing fourteen real orders. It never touches the database:
+`postJSON` becomes a no-op and the live refresh is skipped, so nothing a preview
+session does can reach a real buyer list or the waitlist.
+
 ## Database
 
 Two tables, both holding the same four fields so a waitlist entry can be
