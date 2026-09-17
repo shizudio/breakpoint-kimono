@@ -24,15 +24,34 @@ function ed25519PublicKey(raw32) {
 }
 
 /* The exact text the wallet displays and signs. Built on the server both times
-   — at issue and at verification — so the bytes cannot drift between them. */
+   — at issue and at verification — so the bytes cannot drift between them.
+ *
+ * This is Sign In With Solana, and the format is not decorative. The opening
+ * line makes Phantom parse the whole message against the SIWS grammar, and a
+ * message that opens that way but does not parse is refused outright: "The
+ * app's signature request cannot be shown due to invalid formatting." There is
+ * no partial credit and no fallback to showing the raw text. So:
+ *
+ *   - the statement is ONE line. A newline inside it ends the statement as far
+ *     as the grammar is concerned and the rest fails to parse.
+ *   - URI, Version and Chain ID are required fields, not optional garnish, and
+ *     the five fields must appear in this order.
+ *   - the domain on the first line and URI must match the origin the page is
+ *     served from, which is what PUBLIC_ORIGIN is for. Opening the app on any
+ *     other host — the API's own IP, say — makes the wallet reject the request
+ *     even though the text is well-formed.
+ */
 export function signInMessage(pubkey, nonce, issuedAt) {
+  var origin = new URL(config.publicOrigin);
   return [
-    new URL(config.publicOrigin).host + " wants you to sign in with your Solana account:",
+    origin.host + " wants you to sign in with your Solana account:",
     pubkey,
     "",
-    "Sign in to reserve a Breakpoint Kimono.",
-    "This signature proves you hold the key. It approves no payment and moves no funds.",
+    "Sign in to reserve a Breakpoint Kimono. This signature proves you hold the key; it approves no payment and moves no funds.",
     "",
+    "URI: " + origin.origin,
+    "Version: 1",
+    "Chain ID: " + config.network,
     "Nonce: " + nonce,
     "Issued At: " + new Date(issuedAt).toISOString()
   ].join("\n");

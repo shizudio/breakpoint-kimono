@@ -1,0 +1,16 @@
+# Only site/ is deployed — the build turns it into dist/. Everything here either
+# is not needed to build the page or must never leave this machine.
+node_modules
+dist
+
+# The presale server runs on its own host; Vercel only reverse-proxies to it.
+# server/.env carries the RPC key, the session secret and the bot token.
+server
+data
+*.db
+*.db-wal
+*.db-shm
+.env
+.env.*
+!.env.example
+source

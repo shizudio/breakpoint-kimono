@@ -24,3 +24,23 @@ data/
 
 # Vite build output
 dist/
+
+# Anything that carries the ledger's contents out of data/: a backup written
+# with BACKUP_DIR pointed somewhere else, a copy saved under another extension,
+# or a spreadsheet export of the buyer list. data/ is already ignored — these
+# are for the copy that lands outside it. It is fifteen people's names, email
+# addresses and shipping details.
+backups/
+*.sqlite
+*.sqlite3
+*.csv
+
+# Stray copies of a file that was safe until it was duplicated.
+# server/.env.bak.1789567410 already exists on this machine; it is caught by
+# server/.env.* above, and this is what catches the next one wherever it lands.
+*.bak
+*.bak.*
+
+# `npm run email:preview` writes this next to the server. The order in it is
+# invented, so nothing leaks — but it is build output, not source.
+confirmation-email.html
