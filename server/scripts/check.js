@@ -104,29 +104,46 @@ if (!config.resendKey || !config.emailFrom) {
 } else {
   /* The from-address is where this goes silently wrong. Resend accepts the
      request and rejects the send when the domain is not verified, so the buyer
-     hears nothing and the only trace is an email.failed event nobody reads. */
+     hears nothing and the only trace is an email.failed event nobody reads.
+
+     A real send is the only authority here. The domain list is a nicety: a
+     send-only API key — the kind you should be deploying with — cannot read it
+     and answers 401, which says nothing about whether the key can send. So the
+     listing only ever warns, and the send below decides. */
   var fromAddr = (config.emailFrom.match(/<([^>]+)>/) || [null, config.emailFrom])[1].trim();
   var fromDomain = fromAddr.split("@")[1] || "";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(fromAddr)) {
     bad("EMAIL_FROM is not an address", config.emailFrom + ' — use "Name <you@domain>" or just you@domain');
+  } else if (/^(gmail|googlemail|outlook|hotmail|yahoo|icloud|proton|protonmail|qq|163)\./.test(fromDomain + ".")) {
+    /* Worth its own message rather than an opaque 403 at send time: verification
+       is a DNS record on the sending domain, and nobody can add one to a
+       free-mail domain. The mailbox you want people to reach goes in
+       EMAIL_REPLY_TO instead, which is what a buyer presses anyway. */
+    bad("EMAIL_FROM cannot be a free-mail address", fromDomain +
+      " cannot be verified — send from your own domain and put this address in EMAIL_REPLY_TO");
   } else {
+    var introspected = false;
     try {
       var dr = await fetch("https://api.resend.com/domains", {
         headers: { authorization: "Bearer " + config.resendKey }
       });
-      if (dr.status === 401 || dr.status === 403) bad("RESEND_API_KEY is not valid", "check resend.com → API Keys");
-      else if (!dr.ok) warn("could not list Resend domains", "HTTP " + dr.status + " — the key may be restricted to sending");
-      else {
+      if (dr.status === 401 || dr.status === 403) {
+        warn("cannot read the domain list", "this key is restricted to sending — the test below is what proves it works");
+      } else if (!dr.ok) {
+        warn("could not list Resend domains", "HTTP " + dr.status);
+      } else {
+        introspected = true;
         var doms = (await dr.json()).data || [];
         var mine = doms.filter(function (d) { return d.name === fromDomain; })[0];
         if (!mine) bad("EMAIL_FROM is on a domain Resend does not know", fromDomain + " — add it at resend.com → Domains");
         else if (mine.status !== "verified") bad("the sending domain is not verified", fromDomain + " is " + mine.status + " — finish the DNS records");
         else ok("sending domain verified", fromDomain);
       }
-    } catch (e) { bad("could not reach Resend", e.message); }
+    } catch (e) { warn("could not reach the Resend domain list", e.message); }
 
     /* One real send, end to end, to an address of yours — the same path a
-       buyer's confirmation takes, including the QR attachment. */
+       buyer's confirmation takes. This is the check that matters: it exercises
+       the key, the sender, and the domain's DNS in one go. */
     var testTo = config.emailBcc || config.emailReplyTo;
     if (!testTo) warn("no test send", "set EMAIL_BCC or EMAIL_REPLY_TO and re-check to have one delivered to you");
     else {
@@ -141,8 +158,22 @@ if (!config.resendKey || !config.emailFrom) {
                   config.emailFrom + " and land like this one."
           })
         });
-        if (!er.ok) bad("Resend refused a send", (await er.text()).slice(0, 200));
-        else ok("test email delivered", "look in " + testTo);
+        if (er.ok) {
+          ok("test email delivered", "look in " + testTo);
+          if (!introspected) ok("the key can send and the sender is accepted", fromAddr);
+        } else {
+          var detail = await er.text().catch(function () { return ""; });
+          if (er.status === 401 || er.status === 403 && /api[_ ]?key/i.test(detail)) {
+            bad("RESEND_API_KEY is not valid", "check resend.com → API Keys");
+          } else if (/verify a domain|not verified|testing emails/i.test(detail)) {
+            /* Resend's own wording for this is about the recipient, which sends
+               you looking in the wrong place. The cause is the sender. */
+            bad("the sending domain is not verified", fromDomain +
+              " — until it is, Resend delivers only to the address that owns the account and 403s every buyer");
+          } else {
+            bad("Resend refused a send", detail.slice(0, 200));
+          }
+        }
       } catch (e) { bad("could not send through Resend", e.message); }
     }
   }
