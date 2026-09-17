@@ -499,6 +499,39 @@ the dependency, run `npm run vendor` and update `WEB3_SRC` in `site/index.html`.
 
 ## Deploying
 
+### Where this actually runs
+
+| | |
+| --- | --- |
+| Storefront | **https://breakpoint-kimono-presale.vercel.app** — Vercel, production branch `feat/server` |
+| API + ledger | **34.124.147.154** — the process in `server/`, and `data/orders.db` on its disk |
+
+Vercel serves `dist/` and reverse-proxies `/api`, `/admin` and `/vendor/jsqr.js`
+to that host, so the browser only ever sees one origin. The rewrites are in
+`vercel.json`.
+
+Two traps live here, and both cost an afternoon once already.
+
+**There is a second Vercel project.** `breakpoint-kimono.vercel.app` is the
+retired storefront — the Neon-backed shop on `main`, now a holding page. It is
+also what a stale `.vercel/project.json` links this directory to, so a `vercel`
+from here deploys to the wrong place. Do not point it at `feat/server`: two
+storefronts against one ledger, and the second one cannot sign anybody in, for
+the reason below.
+
+**`PUBLIC_ORIGIN` must equal the storefront's origin exactly.** It is the domain
+and `URI` in the Sign In With Solana message, and a wallet refuses a request
+whose domain is not the origin serving the page — sign-in dies at step one
+rather than looking slightly wrong. It is also what the pickup QR and the
+confirmation email's "reopen it" link encode. Reading it back is one request:
+
+    curl -s -X POST <origin>/api/session/nonce \
+      -H 'content-type: application/json' -d '{"pubkey":"<any address>"}'
+
+The first line of `message` is the domain the wallet will show.
+
+### The two artifacts
+
 Two artifacts now: `dist/` from `npm run build`, which is static and can go
 anywhere, and the API, which needs a **process and a persistent disk** for the
 SQLite ledger. Platforms with ephemeral filesystems (Vercel, Netlify, Cloudflare
