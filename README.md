@@ -503,7 +503,7 @@ the dependency, run `npm run vendor` and update `WEB3_SRC` in `site/index.html`.
 
 | | |
 | --- | --- |
-| Storefront | **https://breakpoint-kimono-presale.vercel.app** — Vercel, production branch `feat/server` |
+| Storefront | **https://breakpoint-kimono.vercel.app** — Vercel project `breakpoint-kimono`, production branch `feat/server` |
 | API + ledger | **34.124.147.154** — the process in `server/`, and `data/orders.db` on its disk |
 
 Vercel serves `dist/` and reverse-proxies `/api`, `/admin` and `/vendor/jsqr.js`
@@ -512,12 +512,18 @@ to that host, so the browser only ever sees one origin. The rewrites are in
 
 Two traps live here, and both cost an afternoon once already.
 
-**There is a second Vercel project.** `breakpoint-kimono.vercel.app` is the
-retired storefront — the Neon-backed shop on `main`, now a holding page. It is
-also what a stale `.vercel/project.json` links this directory to, so a `vercel`
-from here deploys to the wrong place. Do not point it at `feat/server`: two
-storefronts against one ledger, and the second one cannot sign anybody in, for
-the reason below.
+**Only one hostname can work at a time.** The project also answers on
+`breakpoint-kimono-presale.vercel.app`, and both names serve the same build — but
+`PUBLIC_ORIGIN` can only equal one of them, and the other then refuses every
+sign-in for the reason below. Keep one, and redirect or remove the spare rather
+than leaving a second working-looking link in circulation.
+
+**Vercel's CDN will lie to you while you check.** A stale edge copy survived long
+enough here to make a finished deploy look like it never happened — a holding
+page from the previous production branch, with `/api` 404ing, served with
+`x-vercel-cache: HIT` and an `age` of twelve hours. Read `age` before concluding
+anything from a response, and confirm against something only the new build has
+(`/vendor/jsqr.js`, or the `immutable` header on `/build/`).
 
 **`PUBLIC_ORIGIN` must equal the storefront's origin exactly.** It is the domain
 and `URI` in the Sign In With Solana message, and a wallet refuses a request
