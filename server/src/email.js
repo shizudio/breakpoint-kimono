@@ -299,12 +299,13 @@ export function sheetText(order) {
    instead is the condition and the refund, stated plainly and early — the buyer
    has paid in full for something conditional, and the page said so, so the
    confirmation must say so too rather than reading like a normal receipt. */
-export function waveTwoHtml(order) {
+export function waveTwoHtml(order, opts) {
+  var missed = !!(opts && opts.missed);
   var tx = explorerTx(order.tx_signature);
   return `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
 <meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
-<title>You are in wave two</title></head>
+<title>${missed ? "You just missed the run" : "You are in wave two"}</title></head>
 <body style="margin:0;padding:0;background:${GROUND};color:${INK};" bgcolor="${GROUND}">
 <div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your place in the second cut is held. If it does not go ahead, your payment comes back in full.</div>
 
@@ -317,10 +318,19 @@ export function waveTwoHtml(order) {
   </td></tr>
 
   <tr><td style="font:300 32px/1.2 ${ED};color:${INK};padding-bottom:22px;">
-    You are in wave two.
+    ${missed ? "You missed it by seconds." : "You are in wave two."}
   </td></tr>
 
-  <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:10px;">
+  ${missed ? `<tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:10px;">
+    ${esc(firstName(order.name))}, the fifteenth piece went while your payment
+    was confirming — by seconds. Your ${config.priceUsdc} USDC arrived and we
+    have it.
+  </td></tr>
+  <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:28px;">
+    Rather than simply send it back, we have put you first in wave two, the next
+    cut of the same kimono. That is our doing, not something you chose — so if
+    you would rather have the refund, say the word and it goes back the same day.
+  </td></tr>` : `<tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:10px;">
     Thank you for backing a second cut of the 2026 Breakpoint Kimono,
     ${esc(firstName(order.name))}. The first fifteen went, and you are in the
     run that follows them.
@@ -328,7 +338,7 @@ export function waveTwoHtml(order) {
   <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:28px;">
     We confirm wave two once enough orders come in to cut it and reach
     Breakpoint on time. You will hear either way.
-  </td></tr>
+  </td></tr>`}
 
   ${cardImage ? `<tr><td style="border:1px solid ${HAIR};">
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -386,8 +396,18 @@ export function waveTwoHtml(order) {
 </body></html>`;
 }
 
-export function waveTwoText(order) {
-  return [
+export function waveTwoText(order, opts) {
+  var missed = !!(opts && opts.missed);
+  var lead = missed ? [
+    "You missed it by seconds.",
+    "",
+    firstName(order.name) + ", the fifteenth piece went while your payment was",
+    "confirming. Your " + config.priceUsdc + " USDC arrived and we have it.",
+    "",
+    "Rather than simply send it back, we have put you first in wave two, the next",
+    "cut of the same kimono. That is our doing, not something you chose — so if",
+    "you would rather have the refund, say the word and it goes back the same day."
+  ] : [
     "You are in wave two.",
     "",
     "Thank you for backing a second cut of the 2026 Breakpoint Kimono, " +
@@ -395,7 +415,9 @@ export function waveTwoText(order) {
     "that follows them.",
     "",
     "We confirm wave two once enough orders come in to cut it and reach",
-    "Breakpoint on time. You will hear either way.",
+    "Breakpoint on time. You will hear either way."
+  ];
+  return lead.concat([
     "",
     "IF WAVE TWO DOES NOT GO AHEAD, YOUR " + config.priceUsdc + " USDC COMES BACK IN FULL.",
     "You do not have to ask, and you can cancel any time before it is confirmed",
@@ -408,7 +430,7 @@ export function waveTwoText(order) {
     "Order             " + order.id,
     "",
     "Questions, or want to cancel? Reply here, or @shizudio on X."
-  ].filter(function (l) { return l !== null; }).join("\n");
+  ]).filter(function (l) { return l !== null; }).join("\n");
 }
 
 /* Same contract as the pass: fire-and-forget, refused if it has already gone,
@@ -419,14 +441,19 @@ export async function sendWaveTwoConfirmation(order, opts) {
   if (!order || order.status !== "paid" || order.wave !== 2) {
     return { ok: false, reason: "NOT_WAVE_TWO" };
   }
+  /* Whether they chose wave two or were moved into it after missing the run by
+     seconds. Two different things happened to them, so two different letters. */
+  var missed = !!(opts && opts.missed);
   if (!force && hasEvent(order.id, "email.sent")) return { ok: false, reason: "ALREADY_SENT" };
 
   var payload = {
     from: config.emailFrom,
     to: [order.email],
-    subject: "You are in wave two — the second cut of the Breakpoint Kimono",
-    html: waveTwoHtml(order),
-    text: waveTwoText(order),
+    subject: missed
+      ? "You missed the run by seconds — your options"
+      : "You are in wave two — the second cut of the Breakpoint Kimono",
+    html: waveTwoHtml(order, { missed: missed }),
+    text: waveTwoText(order, { missed: missed }),
     attachments: []
   };
   if (cardImage) payload.attachments.push({

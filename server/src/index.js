@@ -261,6 +261,8 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
 
   var paid = store.markPaid(order.id, signature);
 
+  /* Only reachable with wave two off; otherwise the payment was moved into the
+     second cut rather than becoming a refund. */
   if (paid.status === "overflow") {
     notifyOverflow(paid);
     return fail(res, 409, "SOLD_OUT_AFTER_PAYMENT",
@@ -270,16 +272,20 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
   }
 
   if (paid.wave === 2) {
+    /* Read back off the trail: this row was converted after missing the run,
+       not chosen. It changes what is said to them and what is said to us. */
+    var missedRun = store.hasEvent(paid.id, "order.overflow.wave2");
     /* No piece, no pickup code, nothing at a counter yet — so none of the
        wave-one apparatus fires. What goes out says what was actually bought:
        a place in the second cut, and the refund if it does not happen. */
-    notifyWaveTwo(paid, store.wave2Count());
-    sendWaveTwoConfirmation(paid).catch(function (e) {
+    notifyWaveTwo(paid, store.wave2Count(), missedRun);
+    sendWaveTwoConfirmation(paid, { missed: missedRun }).catch(function (e) {
       console.error("[email] wave two", e.message);
     });
     if (paid.x_handle) fetchAvatar(paid.x_handle).catch(function () {});
     return json(res, 200, {
       order: publicOrder(paid, config.publicOrigin),
+      missedRun: missedRun,
       explorer: explorerTx(signature),
       state: stateBody(wallet)
     });

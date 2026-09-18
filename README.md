@@ -341,10 +341,23 @@ pieces and now asserts the seam as well: fifteen get numbered pieces, the other
 twenty-five land in wave two with places 1–25, nobody is refused, and no
 wave-two row is handed a piece number.
 
-Wave two does not apply to the **overflow** case below. Someone whose payment
-confirms just after the last piece is gone paid for a kimono that exists, not
-for a conditional cut, so that stays a refund rather than being quietly
-converted into a different product.
+**Missing the run by seconds** lands in wave two too. A hold can lapse and the
+last piece can go while a transaction confirms; the money is real either way, so
+the payment is taken and only the piece is refused. Rather than send it straight
+back, the order moves into the second cut — they wanted this kimono enough to
+pay for it, and wave two is the next one being made.
+
+That is a conversion, not a purchase they made, and everything about it says so.
+The row is logged as `order.overflow.wave2` rather than `order.paid.wave2`, and
+the trail is what the route reads to pick the letter. The confirmation opens
+"you missed it by seconds", states plainly that this was our doing and not their
+choice, and offers the refund outright — same day, on a word, no waiting for the
+cut to be decided. The screen says the same. The Telegram message leads with a
+warning rather than a count, because this is the buyer most likely to want their
+money rather than a kimono in November.
+
+With `WAVE_TWO=0` there is nowhere to put them and it stays what it was: status
+`overflow`, a refund owed, and a loud message about it.
 
 Set `WAVE_TWO=0` to go back to a closed shop on a full run.
 
@@ -537,8 +550,10 @@ session is not the same as holding an admin one.
   null rather than zero, and that a second boot does not add the column twice.
 - `wave.test.js` — the seam at the fifteenth: that a sixteenth buyer is not
   refused, lands in wave two with a place and no piece and no pickup code, that
-  the run's own counters do not move when they do, and that `WAVE_TWO=0` closes
-  the shop the way it used to.
+  the run's own counters do not move when they do, that a payment confirming as
+  the run sells out is converted rather than refunded and is recorded as a
+  conversion, that the letter it produces says so and offers the money back, and
+  that `WAVE_TWO=0` restores both the closed shop and the refund.
 - `avatar.test.js` — buyers' pictures, against a stand-in source: that a miss
   writes no file and asks for no placeholder, that HTML and oversized responses
   are refused, that a handle shaped like a path never reaches the filesystem,

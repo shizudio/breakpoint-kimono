@@ -76,9 +76,12 @@ export function notifyPaid(order) {
 /* A commitment to the second cut. Not a sale of a kimono — nothing is made yet
    — so it reads as what it is: one more towards the number that decides whether
    wave two happens at all, and money that has to go back if it does not. */
-export function notifyWaveTwo(order, committed) {
+export function notifyWaveTwo(order, committed, missed) {
   return send([
-    "<b>Wave two — " + committed + " committed</b>",
+    missed
+      ? "<b>⚠ Missed the run by seconds — moved to wave two</b>"
+      : "<b>Wave two — " + committed + " committed</b>",
+    missed ? "Their payment landed as the last piece went. They did not choose this — the refund is theirs on request." : null,
     "",
     esc(order.name),
     esc(order.email),
@@ -92,7 +95,7 @@ export function notifyWaveTwo(order, committed) {
     "Order: <code>" + esc(order.id) + "</code>",
     config.priceUsdc + " USDC · <a href=\"" + explorerTx(order.tx_signature) + "\">transaction</a>",
     "",
-    "Refundable in full until the cut is confirmed."
+    missed ? "Wave two place no. " + order.wave_no : "Refundable in full until the cut is confirmed."
   ].filter(function (l) { return l !== null; }).join("\n"));
 }
 

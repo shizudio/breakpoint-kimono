@@ -343,10 +343,31 @@ export function markPaid(orderId_, signature) {
       return q("SELECT * FROM orders WHERE id = ?").get(orderId_);
     }
 
-    /* The hold may have lapsed while the transaction confirmed. The money is
-       real either way, so we take the payment and only refuse a piece if the
-       run is genuinely full — that case becomes a refund, not a silent loss. */
+    /* The hold may have lapsed while the transaction confirmed, and the last
+       piece can go in those few seconds. The money is real either way, so the
+       payment is taken and only the piece is refused.
+
+       Where that lands depends on whether there is a second cut to land in.
+       With wave two open the order moves into it rather than becoming a refund:
+       they wanted this kimono enough to pay for it, and wave two is the next one
+       being made. It is a conversion, not a purchase they made — so it is
+       recorded as one, the confirmation says the piece was missed and offers the
+       refund outright, and they can take it at a word until the cut is
+       confirmed. With wave two off there is nowhere to put them, and the money
+       goes back. */
     if (paidCount() >= config.cap) {
+      if (config.waveTwo) {
+        var nextAfterMiss = q(`SELECT COALESCE(MAX(wave_no), 0) + 1 AS n FROM orders
+                               WHERE wave = 2 AND status = 'paid'`).get().n;
+        q(`UPDATE orders SET status='paid', wave=2, wave_no=?, tx_signature=?, paid_at=?,
+             notes='Paid as the run sold out — moved to wave two, refundable on request.'
+           WHERE id=?`).run(nextAfterMiss, signature, now, orderId_);
+        /* Its own kind, so the trail says this row was converted rather than
+           chosen — the route reads it back to send the right letter, and it is
+           the first thing to look for if this buyer asks for their money. */
+        logEvent(orderId_, "order.overflow.wave2", signature);
+        return q("SELECT * FROM orders WHERE id = ?").get(orderId_);
+      }
       q(`UPDATE orders SET status='overflow', tx_signature=?, paid_at=?,
            notes='Paid after the run sold out — refund owed.' WHERE id=?`)
         .run(signature, now, orderId_);

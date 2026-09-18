@@ -653,6 +653,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     buyers: [],              // [{ handle, piece }], newest first; handle may be null
     soldOut: false,
     wave: 1,                 // 1 while the run has stock, 2 once it is full
+    missedRun: false,        // moved into wave two after the run went, mid-payment
     waveTwoOpen: true,       // whether a full run opens a second cut at all
     solanaMark: null,      // true | false — chosen at step three, no default
     pendingDetails: null,  // held between the details form and the order POST
@@ -1190,6 +1191,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       .then(function (out) {
         state.busy = false;
         state.order = out.order;
+        state.missedRun = !!out.missedRun;
         state.signature = null;
         /* Keep the cache in step, or closing the panel and pressing Reserve
            again in the same session offers an order form for a piece they have
@@ -1443,17 +1445,27 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
          there is nothing to collect yet — the condition and the refund take its
          place, which is what the buyer actually needs to be able to see. */
       var w = state.order || {};
-      panel.appendChild(eyebrow("Wave two"));
-      panel.appendChild(title("You are in wave two."));
+      /* Being moved here after missing the run by seconds is not the same as
+         choosing it, and the screen has to say which one happened — otherwise
+         someone who paid for a piece that exists is quietly shown a receipt for
+         something else. */
+      var missed = !!state.missedRun;
+      panel.appendChild(eyebrow(missed ? "Missed by seconds" : "Wave two"));
+      panel.appendChild(title(missed ? "You missed it by seconds." : "You are in wave two."));
       panel.appendChild(el("p", {
         style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
-        text: "The first fifteen went. We confirm wave two once enough orders come in to cut it and reach Breakpoint on time, and you will hear either way."
+        text: missed
+          ? "The fifteenth went while your payment was confirming. We have your " + (w.amountUsdc || state.priceUsdc) + " USDC, and rather than simply send it back we have put you first in wave two — the next cut of the same kimono. That is our doing, not something you chose."
+          : "The first fifteen went. We confirm wave two once enough orders come in to cut it and reach Breakpoint on time, and you will hear either way."
       }));
       panel.appendChild(el("p", {
         class: "keepsafe",
-        html: "<b>If wave two does not go ahead, your " + (w.amountUsdc || state.priceUsdc) +
-              " USDC comes back in full.</b> You do not have to ask, and you can cancel any " +
-              'time before it is confirmed by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.'
+        html: (missed
+          ? "<b>Would rather have the refund? Say the word and it goes back the same day.</b> "
+          : "") +
+          "<b>If wave two does not go ahead, your " + (w.amountUsdc || state.priceUsdc) +
+          " USDC comes back in full.</b> You do not have to ask, and you can cancel any " +
+          'time before it is confirmed by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.'
       }));
       var wrows = el("div", {});
       wrows.appendChild(el("div", { class: "ordrow" }, [
