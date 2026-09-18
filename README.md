@@ -512,11 +512,18 @@ to that host, so the browser only ever sees one origin. The rewrites are in
 
 Two traps live here, and both cost an afternoon once already.
 
-**Only one hostname can work at a time.** The project also answers on
-`breakpoint-kimono-presale.vercel.app`, and both names serve the same build — but
-`PUBLIC_ORIGIN` can only equal one of them, and the other then refuses every
-sign-in for the reason below. Keep one, and redirect or remove the spare rather
-than leaving a second working-looking link in circulation.
+**Only one hostname can work at a time.** The project answers on two names, and
+`PUBLIC_ORIGIN` can equal only one of them — so the other looks perfectly alive,
+serves the same build, proxies the same API, and then refuses every sign-in, for
+the reason below. That is the worst shape a spare domain can take: not down, but
+quietly unable to sell.
+
+So the shop is `breakpoint-kimono-presale.vercel.app`, and `vercel.json` sends
+everything on `breakpoint-kimono.vercel.app` there with a host-conditional
+redirect. Redirects run before rewrites, so the old name is out of service
+whole — page, `/api` and `/admin` alike. It is a 307 rather than a 308 on
+purpose: browsers cache a permanent redirect indefinitely, and the day a real
+domain is attached, that cache is on every machine that ever visited.
 
 **Vercel's CDN will lie to you while you check.** A stale edge copy survived long
 enough here to make a finished deploy look like it never happened — a holding
