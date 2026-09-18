@@ -126,6 +126,20 @@ check("Telegram is promised when we have a handle", /by email and on Telegram, t
    promise broken on the day it matters most. */
 check("and not promised when we do not", !/Telegram/.test(withoutTg));
 
+console.log("\na discount that is not one");
+/* The struck-out price is a claim about money. A value at or below what is
+   actually charged advertises a saving the receipt contradicts, so the server
+   refuses to start rather than run a shop that lies about its own price. */
+var badPrice = (await import("node:child_process")).spawnSync(process.execPath, ["--env-file=.env", "-e", `
+  process.env.DB_PATH = "../data/test/wave.db";
+  process.env.PRICE_USDC = "260";
+  process.env.LIST_PRICE_USDC = "260";
+  await import("./src/config.js");
+  console.log("BOOTED");
+`], { cwd: resolve(here, ".."), encoding: "utf8" });
+check("the server refuses to boot", !/BOOTED/.test(badPrice.stdout || ""), badPrice.stdout);
+check("and says why", /must be greater than PRICE_USDC/.test(badPrice.stderr || ""), (badPrice.stderr || "").slice(0, 120));
+
 console.log("\nwith wave two switched off");
 var offRun = (await import("node:child_process")).spawnSync(process.execPath, ["--env-file=.env", "-e", `
   process.env.DB_PATH = "../data/test/wave.db";

@@ -19,7 +19,7 @@ var adminKp = generateKeyPairSync("ed25519");
 var ADMIN_ADDRESS = encodeBase58(adminKp.publicKey.export({ format: "der", type: "spki" }).subarray(12));
 var env = Object.assign({}, process.env, {
   PORT: String(PORT), DB_PATH: "../data/test/pickup.db", PUBLIC_ORIGIN: BASE,
-  SESSION_SECRET: "s".repeat(64), ADMIN_WALLETS: ADMIN_ADDRESS, PRICE_USDC: "300", CAP: "15",
+  SESSION_SECRET: "s".repeat(64), ADMIN_WALLETS: ADMIN_ADDRESS, PRICE_USDC: "300", LIST_PRICE_USDC: "0", CAP: "15",
   TELEGRAM_BOT_TOKEN: "", TELEGRAM_CHAT_ID: ""
 });
 
