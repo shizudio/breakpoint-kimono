@@ -561,17 +561,31 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   }
 
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
-  /* Self-hosted profile pictures. Anyone without one falls back to the initial on
-     a tinted ground, which is what the design specified. */
+  /* Ours first. These two are cropped and colour-matched by hand, and the point
+     of a hand-picked image is that nothing fetched later overrides it. */
   var AVATARS = {
     shizudio: "/web/avatar-shizudio.jpg",
     gizmothegizzer: "/web/avatar-gizmothegizzer.jpg"
   };
-  function avatarInto(node, handle) {
-    var src = AVATARS[handle];
+
+  /* Everyone else's comes from the server, which fetched it once and kept it —
+     the browser never asks a third party who bought a kimono. `cached` is the
+     URL the API handed us, and it is only ever present when the file exists.
+
+     Failure is silent by design. The initial on its tinted ground is the
+     design's own fallback, not an error state, so a picture that 404s or never
+     decodes simply leaves it in place rather than blanking the circle. */
+  function avatarInto(node, handle, cached) {
+    var src = AVATARS[handle] || cached;
     if (!src) return false;
+    var initial = node.textContent;
+    var img = el("img", { src: src, alt: "", loading: "lazy", width: "128", height: "128" });
+    img.addEventListener("error", function () {
+      img.remove();
+      node.textContent = initial;
+    });
     node.textContent = "";
-    node.appendChild(el("img", { src: src, alt: "", loading: "lazy", width: "128", height: "128" }));
+    node.appendChild(img);
     return true;
   }
   /* Extensions inject themselves at different moments, so each wallet is found
@@ -768,7 +782,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         style: "background:" + TINTS[i % 4],
         text: b.handle ? b.handle[0].toUpperCase() : "·"
       });
-      if (b.handle) avatarInto(node, b.handle);
+      if (b.handle) avatarInto(node, b.handle, b.avatar);
       bubbles.appendChild(node);
     });
     /* A buyer who left no X handle is counted but never named. They fall into
@@ -806,7 +820,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
             style: "background:" + (taken ? TINTS[i % 5] : "transparent"),
             text: handle ? handle[0].toUpperCase() : ""
           });
-          if (handle) avatarInto(av, handle);
+          if (handle) avatarInto(av, handle, b && b.avatar);
           return av;
         })(),
         el("span", {

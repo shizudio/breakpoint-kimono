@@ -66,6 +66,19 @@ export var config = {
   /* An optional copy of every confirmation, to an address you control. Worth
      setting: it is the only record of what the buyer was actually sent. */
   emailBcc: opt("EMAIL_BCC", ""),
+  /* Where buyers' profile pictures come from, and where they are kept once
+     fetched. The handle is appended to the source; empty turns the whole thing
+     off and the panel keeps its initials. unavatar resolves an X handle without
+     an API key — X's own user lookup is behind a paid tier. */
+  /* Not opt(), deliberately. opt() reads an empty value as "use the default",
+     which for every other setting is a convenience and here would be a trap:
+     the documented way to switch this off is to blank it, and blanking it would
+     quietly keep calling a third party with buyers' handles. Unset means the
+     default; empty means off, and means it. */
+  avatarSource: process.env.AVATAR_SOURCE == null
+    ? "https://unavatar.io/x/"
+    : String(process.env.AVATAR_SOURCE).trim(),
+  avatarDir: opt("AVATAR_DIR", "../data/avatars"),
   /* The order card shown in the confirmation email, attached rather than linked.
      Empty uses site/public/web/share-card.jpg next to this checkout — set it
      only if the two apps are deployed apart and that path does not exist. */

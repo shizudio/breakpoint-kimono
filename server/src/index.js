@@ -6,7 +6,7 @@
    browser never learns any of the three. */
 
 import { createServer } from "node:http";
-import { readFileSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 
 import { config, explorerTx } from "./config.js";
@@ -16,6 +16,7 @@ import { newReference, buildPaymentTransaction, verifyPayment, usdcBalance, rpcH
 import { notifyPaid, notifyOverflow, notifyCollected, notifyStartup, telegramEnabled } from "./telegram.js";
 import { sendConfirmation, emailEnabled } from "./email.js";
 import { pickupQrSvg } from "./qr.js";
+import { avatarUrl, avatarFile, warmAvatars, fetchAvatar, avatarsEnabled, validHandle } from "./avatars.js";
 import { json, fail, readJson, validateOrder, rateLimit, clientIp, publicOrder } from "./util.js";
 import { serveStatic } from "./static.js";
 import { isSignature } from "./base58.js";
@@ -55,6 +56,17 @@ function requireAdmin(req, res) {
 
 function presaleOver() { return Date.now() > config.presaleEndsAt; }
 
+/* The buyer list, each with a picture if we have one. Whatever is missing is
+   fetched in the background and turns up on the next load — which is also how
+   orders taken before any of this existed get one. */
+function buyersWithAvatars() {
+  var buyers = store.publicBuyers();
+  warmAvatars(buyers.map(function (b) { return b.handle; }).filter(Boolean));
+  return buyers.map(function (b) {
+    return { handle: b.handle, piece: b.piece, avatar: b.handle ? avatarUrl(b.handle) : null };
+  });
+}
+
 function stateBody(wallet) {
   store.expireStaleHolds();
   var sold = store.paidCount();
@@ -68,7 +80,7 @@ function stateBody(wallet) {
     network: config.network,
     presaleEndsAt: config.presaleEndsAt,
     presaleOver: presaleOver(),
-    buyers: store.publicBuyers(),
+    buyers: buyersWithAvatars(),
     wallet: wallet || null
   };
 }
@@ -90,10 +102,27 @@ route("GET", /^\/api\/health$/, async function (req, res) {
     network: config.network,
     telegram: telegramEnabled(),
     email: emailEnabled(),
+    avatars: avatarsEnabled(),
     rpc: await rpcHealth(),      // reports reachability, never the URL
     sold: store.paidCount(),
     cap: config.cap
   });
+});
+
+/* The cached picture. Served from here rather than from the front end because
+   this is where it lands, and under /api/ so the reverse proxy already forwards
+   it. The handle is matched by the route itself, so nothing shaped like a path
+   ever reaches the filesystem. */
+route("GET", /^\/api\/avatars\/([A-Za-z0-9_]{1,15})\.jpg$/, async function (req, res, m) {
+  var file = avatarFile(m[1]);
+  if (!file || !existsSync(file)) return fail(res, 404, "NO_AVATAR", "No picture for that handle.");
+  res.writeHead(200, {
+    "content-type": "image/jpeg",
+    /* Content can change under a stable name — someone changes their picture —
+       so this revalidates rather than being immutable. */
+    "cache-control": "public, max-age=3600"
+  });
+  createReadStream(file).pipe(res);
 });
 
 /* --- sign in --- */
@@ -242,6 +271,10 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
   sendConfirmation(paid).catch(function (e) {
     console.error("[email] confirmation", e.message);
   });
+  /* Their face on the wall, fetched now so it is there by the time anyone
+     reloads. Like everything else after markPaid: not awaited, cannot fail the
+     sale, and a miss just leaves the initial. */
+  if (paid.x_handle) fetchAvatar(paid.x_handle).catch(function () {});
   json(res, 200, {
     order: publicOrder(paid, config.publicOrigin),
     explorer: explorerTx(signature),
@@ -472,6 +505,7 @@ server.listen(config.port, function () {
   console.log("  price       " + config.priceUsdc + " USDC");
   console.log("  sold        " + sold + " / " + config.cap);
   console.log("  telegram    " + (telegramEnabled() ? "on" : "off (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)"));
+  console.log("  avatars     " + (avatarsEnabled() ? "on · " + config.avatarSource + "<handle>" : "off (initials only)"));
   console.log("  email       " + (emailEnabled() ? "on · from " + config.emailFrom : "off (set RESEND_API_KEY and EMAIL_FROM)"));
   console.log("  admin       " + config.publicOrigin + "/admin");
   console.log("  site        " + (config.siteDir

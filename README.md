@@ -88,6 +88,7 @@ therefore public by definition.
 | `RESEND_API_KEY`, `EMAIL_FROM` | Optional. Blank disables the buyer's confirmation email; orders still record. |
 | `EMAIL_REPLY_TO`, `EMAIL_BCC` | Where a reply lands, and your own copy of every pass sent. |
 | `EMAIL_CARD_IMAGE` | The order card in the email. Empty reads `site/public/web/share-card.jpg`. |
+| `AVATAR_SOURCE`, `AVATAR_DIR` | Where buyers' pictures come from and where they are kept. **Empty source means off**, not "use the default". |
 | `SITE_DIR` | Empty: API only. `../dist`: also serve the built front end. |
 | `ALLOWED_ORIGINS` | Only for the cross-origin mode above. |
 | `PUBLIC_ORIGIN` | Used in the pickup QR. |
@@ -187,6 +188,43 @@ because the alternative — a buyer at a counter in a hall with no signal, asked
 connect a wallet — fails more often and more visibly. The mitigation is at the
 counter rather than in the mail: **staff ask for a name**, and a name is in the
 ledger while a passer-by holding a forwarded email does not have one.
+
+### Buyers' faces
+
+The panel names whoever reserved a piece, and initials on tinted squares are the
+design's fallback rather than its intent. So a buyer's X picture is fetched —
+but not the way the obvious implementation would.
+
+The obvious implementation points an `<img>` at a third party and lets every
+visitor's browser ask it for "the avatar of @so-and-so". That hands the guest
+list to an outside service one lookup at a time, from the buyers' machines
+rather than ours. Instead the fetch happens server-side, once, and the file is
+kept under `data/avatars/`. After that the picture is ours: it survives the
+source disappearing, changing its terms, or rate-limiting us on the day.
+
+X's own user lookup sits behind a paid API tier, so the default source is
+unavatar, which resolves a handle without a key. The request carries
+`fallback=false`, and that flag is the whole reason this is usable: without it
+the source answers **200 with a generic silhouette** for a handle it cannot
+find, which would put a stranger's face beside a real buyer's name. With it, a
+miss is a 404 and the initial stays.
+
+Everything about it is allowed to fail. A miss, a timeout, a response that is
+not an image, one too large — each leaves the initial in place, and the browser
+falls back again if a cached file ever fails to decode. Fetching happens when a
+sale lands and, for handles taken before any of this existed, in the background
+the first time someone loads the page; once per handle per process, because the
+page is loaded far more often than fifteen people buy a kimono.
+
+The two hand-picked images in `site/public/web/` still win. They are cropped and
+colour-matched by hand, and the point of a hand-picked image is that nothing
+fetched later overrides it.
+
+To switch the whole thing off, blank `AVATAR_SOURCE`. Note that this is the one
+setting read without `opt()`: that helper treats an empty value as "use the
+default", which everywhere else is a convenience and here would be a trap —
+blanking it would have quietly gone on calling a third party with buyers'
+handles.
 
 ### The Solana mark
 
@@ -451,6 +489,11 @@ session is not the same as holding an admin one.
 - `migrate.test.js` — the `mark` column arriving on a ledger that already holds
   a sale: that it boots, that the order survives, that an unasked order reads
   null rather than zero, and that a second boot does not add the column twice.
+- `avatar.test.js` — buyers' pictures, against a stand-in source: that a miss
+  writes no file and asks for no placeholder, that HTML and oversized responses
+  are refused, that a handle shaped like a path never reaches the filesystem,
+  that nothing is fetched twice, and that blanking the source really does
+  switch it off.
 - `email.test.js` — the buyer's confirmation, against a stand-in Resend: what
   the payload carries, that the attachment is a real PNG referenced inline, that
   the QR encodes the same fragment the panel's does, that a second send is
