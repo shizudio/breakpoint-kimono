@@ -917,7 +917,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     { q: "When does it ship?", a: "We cut through October and ship in November, ahead of the event. If you would rather collect yours in person at Breakpoint, say so in the form and we will hold it." },
     { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
     { q: "How does paying work?", a: "Connect a Solana wallet, leave your details, and approve a single 300 USDC transfer to the studio address. Your piece is held while you pay and confirmed once the transfer lands on chain — we check the chain itself, not your browser. No mint, no token, no secondary anything." },
-    { q: "The fifteen are gone. What is wave two?", a: "A second cut, on the same terms and the same price. " + WAVE_TWO_TERMS + " Until it is confirmed you can cancel and be refunded at any point, by writing to @shizudio. There is no pickup code yet, because there is nothing to hand over until the cut is made." },
+    { q: "The fifteen are gone. What is wave two?", a: "A second cut, on the same terms and the same price. " + WAVE_TWO_TERMS + " Until it is confirmed you can cancel and be refunded at any point, by writing to @shizudio. There is no pickup code yet, because there is nothing to hand over until the cut is made — once wave two is confirmed we send your claim code by email, and on Telegram if you left a handle." },
     { q: "How do I collect it at Breakpoint?", a: "Paying gives you a pickup code and a QR you can screenshot. Show either at the counter and we hand you your piece — it works offline, and your wallet can always reopen it." },
     { q: "What if I cannot use a wallet?", a: "Write to @shizudio. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
     { q: "Can I get a refund?", a: "Until we cut your piece, yes — write to us and we return the full amount. Once it is on the table it belongs to you." }
@@ -1457,6 +1457,13 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         text: missed
           ? "The fifteenth went while your payment was confirming. We have your " + (w.amountUsdc || state.priceUsdc) + " USDC, and rather than simply send it back we have put you first in wave two — the next cut of the same kimono. That is our doing, not something you chose."
           : "The first fifteen went. We confirm wave two once enough orders come in to cut it and reach Breakpoint on time, and you will hear either way."
+      }));
+      /* Only promise Telegram to someone who gave us a handle. */
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:13px;line-height:1.85;opacity:.72",
+        text: "Once wave two is confirmed we send your claim code by email" +
+          (w.tg ? " and on Telegram, to @" + w.tg : "") +
+          ". That code is what gets the piece handed to you at Breakpoint."
       }));
       panel.appendChild(el("p", {
         class: "keepsafe",

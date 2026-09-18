@@ -61,6 +61,14 @@ function esc(s) {
 /* What the buyer chose for the inner pocket, in the words the panel used.
    Null is "never asked" — an order taken before the question existed — and says
    so rather than claiming they declined. */
+/* What happens when the cut is confirmed. Telegram is only promised to someone
+   who gave us a handle — the field is optional, and a promise to message an
+   address we do not have is one we would be breaking on the day it matters. */
+function confirmedLine(order) {
+  return "Once wave two is confirmed we send your claim code by email" +
+    (order.tg_handle ? " and on Telegram, to @" + order.tg_handle : "") + ".";
+}
+
 function markLine(order) {
   if (order.mark == null) return null;
   return order.mark ? "Solana mark" : "No mark";
@@ -350,6 +358,12 @@ export function waveTwoHtml(order, opts) {
   </td></tr>
   <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>` : ""}
 
+  <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:26px;">
+    ${esc(confirmedLine(order))} That code is what gets the piece handed to you
+    at Breakpoint — there is nothing to collect until the cut is made, so there
+    is nothing to carry until then either.
+  </td></tr>
+
   <!-- the condition, in the place a pickup pass would have been -->
   <tr><td style="border-left:2px solid ${ACCENT};padding:14px 16px;font:300 13px/1.8 ${UI};color:${INK_72};">
     <span style="color:${INK};">If wave two does not go ahead, your ${config.priceUsdc} USDC
@@ -418,6 +432,9 @@ export function waveTwoText(order, opts) {
     "Breakpoint on time. You will hear either way."
   ];
   return lead.concat([
+    "",
+    confirmedLine(order),
+    "That code is what gets the piece handed to you at Breakpoint.",
     "",
     "IF WAVE TWO DOES NOT GO AHEAD, YOUR " + config.priceUsdc + " USDC COMES BACK IN FULL.",
     "You do not have to ask, and you can cancel any time before it is confirmed",

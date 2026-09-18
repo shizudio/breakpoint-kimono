@@ -117,6 +117,15 @@ check("and offers the money back outright", /rather have the refund/.test(missed
 /* Someone who chose wave two must not be told they missed anything. */
 check("the ordinary letter says none of that", !/missed it by seconds/i.test(chosenText) && !/rather have the refund/.test(chosenText));
 
+console.log("\nwhat it promises about the code");
+var withTg = em.waveTwoText(Object.assign({}, lateePaid, { tg_handle: "shina_foo" }), { missed: true });
+var withoutTg = em.waveTwoText(Object.assign({}, lateePaid, { tg_handle: null }), { missed: true });
+check("it says a code comes when the cut is confirmed", /Once wave two is confirmed we send your claim code by email/.test(withoutTg));
+check("Telegram is promised when we have a handle", /by email and on Telegram, to @shina_foo/.test(withTg), withTg.slice(0, 40));
+/* The field is optional. Promising to message an address we do not have is a
+   promise broken on the day it matters most. */
+check("and not promised when we do not", !/Telegram/.test(withoutTg));
+
 console.log("\nwith wave two switched off");
 var offRun = (await import("node:child_process")).spawnSync(process.execPath, ["--env-file=.env", "-e", `
   process.env.DB_PATH = "../data/test/wave.db";

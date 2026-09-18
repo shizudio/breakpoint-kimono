@@ -359,6 +359,15 @@ money rather than a kimono in November.
 With `WAVE_TWO=0` there is nowhere to put them and it stays what it was: status
 `overflow`, a refund owed, and a loud message about it.
 
+Wave two promises a **claim code once the cut is confirmed**, by email and — only
+for buyers who left a handle — on Telegram. **Nothing sends that automatically
+yet.** `markPaid` issues a `pickup_code` for wave-one payments only, and the
+Telegram integration talks to your chat, not to buyers; a bot cannot open a
+conversation with someone who has not written to it first. So confirming wave
+two is, today, a manual job: cut the run, issue the codes, send them. The
+promise is in the buyer's inbox either way, so it needs doing rather than
+remembering.
+
 Set `WAVE_TWO=0` to go back to a closed shop on a full run.
 
 ### The cap
