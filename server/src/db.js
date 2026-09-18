@@ -66,7 +66,17 @@ CREATE TABLE IF NOT EXISTS orders (
      asked. Three states, not two — an order taken before the question existed
      is not the same as one where the buyer said no, and the difference decides
      whether someone has to be asked before the piece is cut. */
-  mark            INTEGER
+  mark            INTEGER,
+  /* 1 is the run of fifteen. 2 is the second cut, which is confirmed by volume
+     rather than capped by it — so it never sells out and never takes one of the
+     fifteen. Rows default to 1 because every row that existed before this column
+     did belongs to the first run. */
+  wave            INTEGER NOT NULL DEFAULT 1,
+  /* Position within wave two. Kept apart from piece_no because piece_no is
+     UNIQUE across the table and wave two starts counting at one again; a shared
+     column would have wave two colliding with the run on its first order. A
+     wave-two row carries no piece_no at all — there is no piece yet. */
+  wave_no         INTEGER
 );
 CREATE INDEX IF NOT EXISTS orders_status   ON orders(status);
 CREATE INDEX IF NOT EXISTS orders_wallet   ON orders(wallet);
@@ -99,6 +109,11 @@ function addColumn(table, column, decl) {
   if (!has) db.exec("ALTER TABLE " + table + " ADD COLUMN " + column + " " + decl);
 }
 addColumn("orders", "mark", "INTEGER");
+/* NOT NULL needs a default to be added to a populated table, and 1 is the right
+   one: everything written before wave two existed is the first run. */
+addColumn("orders", "wave", "INTEGER NOT NULL DEFAULT 1");
+addColumn("orders", "wave_no", "INTEGER");
+db.exec("CREATE INDEX IF NOT EXISTS orders_wave ON orders(wave)");
 
 var q = function (sql) { return db.prepare(sql); };
 
@@ -139,22 +154,43 @@ export function expireStaleHolds() {
   return rows.length;
 }
 
-/* Slots that are gone: paid outright, or held by a live pending order. */
+/* Slots that are gone: paid outright, or held by a live pending order.
+
+   Wave one only, here and in paidCount. Both of these decide whether the run of
+   fifteen is full, and a wave-two order is by definition not competing for it —
+   counting one would close the run early and tell the page it had sold fifteen
+   kimonos it has not made. */
 export function takenCount() {
   var r = q(`SELECT COUNT(*) AS n FROM orders
-             WHERE status='paid' OR (status='pending' AND hold_expires_at >= ?)`).get(Date.now());
+             WHERE wave = 1 AND (status='paid' OR (status='pending' AND hold_expires_at >= ?))`)
+    .get(Date.now());
   return r.n;
 }
 
 export function paidCount() {
-  return q("SELECT COUNT(*) AS n FROM orders WHERE status='paid'").get().n;
+  return q("SELECT COUNT(*) AS n FROM orders WHERE status='paid' AND wave = 1").get().n;
+}
+
+/* How many have committed to the second cut. This is the number the promise on
+   the page is anchored to — wave two goes ahead once there are enough of these
+   to cut it and reach Breakpoint on time. */
+export function wave2Count() {
+  return q("SELECT COUNT(*) AS n FROM orders WHERE status='paid' AND wave = 2").get().n;
+}
+
+/* Which wave a new order belongs in. Decided here rather than taken from the
+   request: the client has no business choosing, and one that asked for wave one
+   after the run filled would be asking for a piece that does not exist. */
+export function currentWave() {
+  expireStaleHolds();
+  return takenCount() >= config.cap && config.waveTwo ? 2 : 1;
 }
 
 /* The leaderboard. Handles only — no names, no addresses, nothing that was
    given to us in confidence. A buyer who left no X handle stays anonymous. */
 export function publicBuyers() {
   return q(`SELECT x_handle, piece_no FROM orders
-            WHERE status='paid' ORDER BY piece_no DESC`).all()
+            WHERE status='paid' AND wave = 1 ORDER BY piece_no DESC`).all()
     .map(function (r) { return { handle: r.x_handle || null, piece: r.piece_no }; });
 }
 
@@ -203,7 +239,13 @@ function tx(fn) {
 export function createPendingOrder(fields) {
   return tx(function () {
     expireStaleHolds();
-    if (takenCount() >= config.cap) {
+    /* Wave one is a fixed run and can run out. Wave two is confirmed by volume
+       rather than capped by it, so there is no cap to check and nobody is turned
+       away — which is the whole point of it existing. With wave two switched
+       off, a full run is a closed shop again and this throws as it always did. */
+    var full = takenCount() >= config.cap;
+    var wave = full && config.waveTwo ? 2 : 1;
+    if (wave === 1 && full) {
       var err = new Error("SOLD_OUT");
       err.code = "SOLD_OUT";
       throw err;
@@ -228,16 +270,18 @@ export function createPendingOrder(fields) {
       hold_expires_at: now + config.holdMinutes * 60000,
       paid_at: null,
       notes: null,
-      mark: markValue(fields.mark)
+      mark: markValue(fields.mark),
+      wave: wave,
+      wave_no: null
     };
     q(`INSERT INTO orders (id,status,piece_no,wallet,name,email,x_handle,tg_handle,
          amount_usdc,reference,tx_signature,pickup_code,collected_at,collected_by,
-         created_at,hold_expires_at,paid_at,notes,mark)
-       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
+         created_at,hold_expires_at,paid_at,notes,mark,wave,wave_no)
+       VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`)
       .run(row.id, row.status, row.piece_no, row.wallet, row.name, row.email,
            row.x_handle, row.tg_handle, row.amount_usdc, row.reference, row.tx_signature,
            row.pickup_code, row.collected_at, row.collected_by, row.created_at,
-           row.hold_expires_at, row.paid_at, row.notes, row.mark);
+           row.hold_expires_at, row.paid_at, row.notes, row.mark, row.wave, row.wave_no);
     logEvent(row.id, "order.pending", row.wallet);
     return row;
   });
@@ -253,6 +297,10 @@ export function reusePendingOrder(wallet, fields) {
     var o = q(`SELECT * FROM orders WHERE wallet = ? AND status = 'pending'
                AND hold_expires_at >= ? ORDER BY created_at DESC LIMIT 1`).get(wallet, Date.now());
     if (!o) return null;
+    /* A hold taken while the run still had stock is not a wave-two order, and
+       the reverse is just as wrong. If the world changed underneath it, let it
+       lapse and take a fresh one in the wave that is actually open. */
+    if (o.wave === 1 && takenCount() >= config.cap) return null;
     var now = Date.now();
     /* The mark moves with the rest: reopening the modal is exactly where someone
        changes their mind about it, and a stale answer here is a wrong garment. */
@@ -279,6 +327,22 @@ export function markPaid(orderId_, signature) {
     if (clash) { var e2 = new Error("SIGNATURE_USED"); e2.code = "SIGNATURE_USED"; throw e2; }
 
     var now = Date.now();
+
+    /* Wave two settles differently, and the difference is the product. There is
+       no piece number because there is no piece yet, and no pickup code because
+       there is nothing at the counter to hand over — the cut is confirmed by
+       volume first. What the buyer gets now is a place in the queue and the
+       promise on the page: if wave two does not go ahead, the payment comes
+       back in full. It also cannot overflow; wave two has no cap to exceed. */
+    if (o.wave === 2) {
+      var nextInWave = q(`SELECT COALESCE(MAX(wave_no), 0) + 1 AS n FROM orders
+                          WHERE wave = 2 AND status = 'paid'`).get().n;
+      q(`UPDATE orders SET status='paid', wave_no=?, tx_signature=?, paid_at=? WHERE id=?`)
+        .run(nextInWave, signature, now, orderId_);
+      logEvent(orderId_, "order.paid.wave2", signature);
+      return q("SELECT * FROM orders WHERE id = ?").get(orderId_);
+    }
+
     /* The hold may have lapsed while the transaction confirmed. The money is
        real either way, so we take the payment and only refuse a piece if the
        run is genuinely full — that case becomes a refund, not a silent loss. */

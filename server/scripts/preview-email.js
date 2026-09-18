@@ -23,6 +23,24 @@ var order = {
   tx_signature: "5j7sVbfMhpQ2rA9xKq3Lm8NvYc4TdUw1ZgHbEoPnRi6kSaXyJtFuCw2eDqMz3Bh"
 };
 
+/* `npm run email:preview wave2 [file]` renders the wave-two letter instead. */
+var wantWave2 = process.argv.indexOf("wave2") !== -1;
+if (wantWave2) {
+  var w2 = Object.assign({}, order, { wave: 2, wave_no: 4, piece_no: null, pickup_code: null });
+  var { waveTwoHtml, waveTwoText } = await import("../src/email.js");
+  var w2html = waveTwoHtml(w2);
+  try {
+    var c = readFileSync(config.emailCardImage ||
+      fileURLToPath(new URL("../../site/public/web/share-card.jpg", import.meta.url)));
+    w2html = w2html.replace("cid:order-card", "data:image/jpeg;base64," + c.toString("base64"));
+  } catch (e) {}
+  var w2out = resolve(process.argv.filter(function (a) { return a !== "wave2"; })[2] || "./wave-two-email.html");
+  writeFileSync(w2out, w2html);
+  console.log(waveTwoText(w2));
+  console.log("\n— written to " + w2out);
+  process.exit(0);
+}
+
 var png = await pickupQrPng(order);
 var card = null;
 try {

@@ -34,6 +34,10 @@
   --ui:'DM Sans',system-ui,-apple-system,sans-serif;
 }
 *{box-sizing:border-box}
+/* An inline display beats the hidden attribute, and blocks here set both.
+   Without this, hiding one by .hidden silently does nothing — which once showed
+   the buy button and the sold-out message at the same time. */
+[hidden]{display:none!important}
 html,body{margin:0;padding:0}
 body{background:var(--ground);color:var(--ink);font-family:var(--ui);font-weight:300;-webkit-font-smoothing:antialiased;-webkit-text-size-adjust:100%;text-size-adjust:100%}
 a,button{-webkit-tap-highlight-color:rgba(153,69,255,.25)}
@@ -434,7 +438,11 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
         <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
       </div>
-      <p class="soldout" id="soldOut" hidden>All fifteen are accounted for. Write to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a> for the waitlist.</p>
+      <div id="soldOut" hidden style="display:flex;flex-direction:column;gap:18px">
+        <p class="soldout" style="margin:0">All fifteen are accounted for. Wave two is open.</p>
+        <button class="btn-purple" data-open-wallet>Join wave two · $300</button>
+        <p class="footnote" style="text-align:center;margin:-4px 0 0">Wave two is confirmed once enough orders come in for us to cut it and reach Breakpoint on time. If it does not go ahead, every payment is returned in full.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -561,6 +569,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     return web3Loading;
   }
 
+  /* Said before payment, on the confirmation and in the FAQ. One string, because
+     three hand-written copies of a refund promise is how they end up disagreeing
+     about what was promised. */
+  var WAVE_TWO_TERMS = "Wave two is confirmed once enough orders come in for us to cut it and " +
+    "reach Breakpoint on time. If it does not go ahead, every payment is returned in full.";
+
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
   /* Ours first. These two are cropped and colour-matched by hand, and the point
      of a hand-picked image is that nothing fetched later overrides it. */
@@ -638,6 +652,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     sold: 0,
     buyers: [],              // [{ handle, piece }], newest first; handle may be null
     soldOut: false,
+    wave: 1,                 // 1 while the run has stock, 2 once it is full
+    waveTwoOpen: true,       // whether a full run opens a second cut at all
     solanaMark: null,      // true | false — chosen at step three, no default
     pendingDetails: null,  // held between the details form and the order POST
     presaleEndsAt: PRESALE_ENDS,
@@ -706,6 +722,8 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     state.sold = s.sold;
     state.buyers = s.buyers || [];
     state.soldOut = s.soldOut;
+    state.wave = s.wave || 1;
+    state.waveTwoOpen = !!s.waveTwo;
     state.presaleEndsAt = s.presaleEndsAt;
     state.presaleOver = s.presaleOver;
     state.priceUsdc = s.priceUsdc;
@@ -791,8 +809,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     var named = shown.map(function (b) { return b.handle; }).filter(Boolean);
     $("#proofText").textContent = proofLine(named, Math.max(0, c - named.length));
 
+    var toWaveTwo = state.soldOut && state.waveTwoOpen;
     $("#orderLive").hidden = state.soldOut;
     $("#soldOut").hidden = !state.soldOut;
+    /* The hero button sits outside #orderLive, so hiding that block leaves it
+       standing. It used to go on saying "Reserve yours" after the run was gone,
+       and walked people into a form that could only end in a refusal. */
+    var hero = $(".cta");
+    if (hero) hero.textContent = toWaveTwo ? "Join wave two · $" + state.priceUsdc
+                                           : "Reserve yours at $" + state.priceUsdc;
   }
 
   function renderLeaderboard() {
@@ -891,6 +916,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     { q: "When does it ship?", a: "We cut through October and ship in November, ahead of the event. If you would rather collect yours in person at Breakpoint, say so in the form and we will hold it." },
     { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
     { q: "How does paying work?", a: "Connect a Solana wallet, leave your details, and approve a single 300 USDC transfer to the studio address. Your piece is held while you pay and confirmed once the transfer lands on chain — we check the chain itself, not your browser. No mint, no token, no secondary anything." },
+    { q: "The fifteen are gone. What is wave two?", a: "A second cut, on the same terms and the same price. " + WAVE_TWO_TERMS + " Until it is confirmed you can cancel and be refunded at any point, by writing to @shizudio. There is no pickup code yet, because there is nothing to hand over until the cut is made." },
     { q: "How do I collect it at Breakpoint?", a: "Paying gives you a pickup code and a QR you can screenshot. Show either at the counter and we hand you your piece — it works offline, and your wallet can always reopen it." },
     { q: "What if I cannot use a wallet?", a: "Write to @shizudio. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
     { q: "Can I get a refund?", a: "Until we cut your piece, yes — write to us and we return the full amount. Once it is on the table it belongs to you." }
@@ -1299,8 +1325,9 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       panel.appendChild(ghostClose());
 
     } else if (state.modal === "details") {
-      panel.appendChild(eyebrow("Step two of four"));
+      panel.appendChild(eyebrow(state.wave === 2 ? "Wave two · step two of four" : "Step two of four"));
       panel.appendChild(title("Your details"));
+      if (state.wave === 2) panel.appendChild(el("p", { class: "footnote", text: WAVE_TWO_TERMS }));
       var chip = walletChip();
       if (chip) panel.appendChild(chip);
       if ((notice = noticeNode())) panel.appendChild(notice);
@@ -1352,7 +1379,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       if ((notice = noticeNode())) panel.appendChild(notice);
 
     } else if (state.modal === "pay" || state.modal === "paying") {
-      panel.appendChild(eyebrow("Step four of four"));
+      panel.appendChild(eyebrow(state.wave === 2 ? "Wave two · step four of four" : "Step four of four"));
       panel.appendChild(title("Pay " + state.priceUsdc + " USDC"));
 
       if (state.solanaMark !== null) panel.appendChild(el("p", {
@@ -1396,7 +1423,12 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
           } else pay();
         });
         panel.appendChild(payBtn);
-        if (state.order && state.order.holdExpiresAt) {
+        if (state.wave === 2 || (state.order && state.order.wave === 2)) {
+          /* The last screen before the money moves is the one that has to carry
+             the condition. Anything softer here and the refund promise is
+             something they read once, two screens ago. */
+          panel.appendChild(el("p", { class: "keepsafe", html: "<b>" + WAVE_TWO_TERMS + "</b>" }));
+        } else if (state.order && state.order.holdExpiresAt) {
           panel.appendChild(el("p", {
             class: "footnote",
             text: "Your piece is held until " +
@@ -1405,6 +1437,40 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         }
         panel.appendChild(panelFoot());
       }
+
+    } else if (state.modal === "done" && (state.order || {}).wave === 2) {
+      /* A different thing was bought, so a different panel. No pass, because
+         there is nothing to collect yet — the condition and the refund take its
+         place, which is what the buyer actually needs to be able to see. */
+      var w = state.order || {};
+      panel.appendChild(eyebrow("Wave two"));
+      panel.appendChild(title("You are in wave two."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        text: "The first fifteen went. We confirm wave two once enough orders come in to cut it and reach Breakpoint on time, and you will hear either way."
+      }));
+      panel.appendChild(el("p", {
+        class: "keepsafe",
+        html: "<b>If wave two does not go ahead, your " + (w.amountUsdc || state.priceUsdc) +
+              " USDC comes back in full.</b> You do not have to ask, and you can cancel any " +
+              'time before it is confirmed by writing to <a href="https://x.com/shizudio" target="_blank" rel="noopener">@shizudio</a>.'
+      }));
+      var wrows = el("div", {});
+      wrows.appendChild(el("div", { class: "ordrow" }, [
+        el("span", { text: "Wave two, order" }), el("span", { text: "no. " + (w.waveNo || "—") })
+      ]));
+      if (w.email) wrows.appendChild(el("div", { class: "ordrow" }, [
+        el("span", { text: "Confirmation to" }), el("span", { text: w.email })
+      ]));
+      var wpaid = el("span", { text: (w.amountUsdc || state.priceUsdc) + " USDC" });
+      if (w.explorer) wpaid = el("span", {}, [
+        el("span", { text: (w.amountUsdc || state.priceUsdc) + " USDC" }),
+        el("span", { style: "opacity:.3;padding:0 8px", text: "·" }),
+        el("a", { href: w.explorer, target: "_blank", rel: "noopener", text: "on chain ↗" })
+      ]);
+      wrows.appendChild(el("div", { class: "ordrow" }, [el("span", { text: "Paid" }), wpaid]));
+      panel.appendChild(wrows);
+      panel.appendChild(panelFoot());
 
     } else if (state.modal === "done") {
       var o = state.order || {};

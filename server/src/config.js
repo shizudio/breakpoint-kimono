@@ -66,6 +66,14 @@ export var config = {
   /* An optional copy of every confirmation, to an address you control. Worth
      setting: it is the only record of what the buyer was actually sent. */
   emailBcc: opt("EMAIL_BCC", ""),
+  /* The second cut. On, a full run opens wave two — same form, same payment,
+     held as a conditional pre-order and refunded in full if the wave does not go
+     ahead. Off, a full run is simply closed and ordering answers SOLD_OUT, which
+     is what it did before wave two existed. */
+  waveTwo: opt("WAVE_TWO", "1") === "1",
+  /* How many wave-two orders it takes to cut it. Shown to nobody — it exists so
+     the pre-flight and the admin page can say how far along it is. */
+  waveTwoTarget: num("WAVE_TWO_TARGET", 15),
   /* Where buyers' profile pictures come from, and where they are kept once
      fetched. The handle is appended to the source; empty turns the whole thing
      off and the panel keeps its initials. unavatar resolves an X handle without

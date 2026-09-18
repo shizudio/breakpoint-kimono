@@ -13,8 +13,8 @@ import { config, explorerTx } from "./config.js";
 import * as store from "./db.js";
 import { startSignIn, verifySignIn, mintToken, cookieHeader, walletFromRequest } from "./session.js";
 import { newReference, buildPaymentTransaction, verifyPayment, usdcBalance, rpcHealth, AMOUNT } from "./solana.js";
-import { notifyPaid, notifyOverflow, notifyCollected, notifyStartup, telegramEnabled } from "./telegram.js";
-import { sendConfirmation, emailEnabled } from "./email.js";
+import { notifyPaid, notifyOverflow, notifyCollected, notifyStartup, notifyWaveTwo, telegramEnabled } from "./telegram.js";
+import { sendConfirmation, sendWaveTwoConfirmation, emailEnabled } from "./email.js";
 import { pickupQrSvg } from "./qr.js";
 import { avatarUrl, avatarFile, warmAvatars, fetchAvatar, avatarsEnabled, validHandle } from "./avatars.js";
 import { json, fail, readJson, validateOrder, rateLimit, clientIp, publicOrder } from "./util.js";
@@ -81,6 +81,12 @@ function stateBody(wallet) {
     presaleEndsAt: config.presaleEndsAt,
     presaleOver: presaleOver(),
     buyers: buyersWithAvatars(),
+    /* The run is what sells out; wave two is what opens when it does. Both
+       numbers go out so the page can say which shop it is showing without a
+       second request. */
+    waveTwo: config.waveTwo,
+    wave: store.currentWave(),
+    wave2Count: store.wave2Count(),
     wallet: wallet || null
   };
 }
@@ -263,6 +269,22 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
       { order: publicOrder(paid, config.publicOrigin) });
   }
 
+  if (paid.wave === 2) {
+    /* No piece, no pickup code, nothing at a counter yet — so none of the
+       wave-one apparatus fires. What goes out says what was actually bought:
+       a place in the second cut, and the refund if it does not happen. */
+    notifyWaveTwo(paid, store.wave2Count());
+    sendWaveTwoConfirmation(paid).catch(function (e) {
+      console.error("[email] wave two", e.message);
+    });
+    if (paid.x_handle) fetchAvatar(paid.x_handle).catch(function () {});
+    return json(res, 200, {
+      order: publicOrder(paid, config.publicOrigin),
+      explorer: explorerTx(signature),
+      state: stateBody(wallet)
+    });
+  }
+
   notifyPaid(paid);
   /* Not awaited, and that is the whole point: the buyer's confirmation screen
      does not wait on a mail provider. A send that fails leaves an email.failed
@@ -327,6 +349,9 @@ route("GET", /^\/api\/admin\/orders$/, async function (req, res) {
   json(res, 200, {
     cap: config.cap,
     sold: store.paidCount(),
+    waveTwo: config.waveTwo,
+    wave2Count: store.wave2Count(),
+    wave2Target: config.waveTwoTarget,
     treasury: config.treasury,
     network: config.network,
     orders: store.allOrders().map(function (o) {
@@ -334,6 +359,8 @@ route("GET", /^\/api\/admin\/orders$/, async function (req, res) {
         id: o.id, status: o.status, piece: o.piece_no, name: o.name, email: o.email,
         x: o.x_handle, tg: o.tg_handle, wallet: o.wallet, pickupCode: o.pickup_code,
         mark: o.mark == null ? null : !!o.mark,
+        wave: o.wave || 1,
+        waveNo: o.wave_no == null ? null : o.wave_no,
         signature: o.tx_signature, explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,
         createdAt: o.created_at, paidAt: o.paid_at, collectedAt: o.collected_at,
         collectedBy: o.collected_by, notes: o.notes,
@@ -505,6 +532,9 @@ server.listen(config.port, function () {
   console.log("  price       " + config.priceUsdc + " USDC");
   console.log("  sold        " + sold + " / " + config.cap);
   console.log("  telegram    " + (telegramEnabled() ? "on" : "off (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)"));
+  console.log("  wave two    " + (config.waveTwo
+    ? "on · " + store.wave2Count() + " committed, cuts at " + config.waveTwoTarget
+    : "off (a full run closes the shop)"));
   console.log("  avatars     " + (avatarsEnabled() ? "on · " + config.avatarSource + "<handle>" : "off (initials only)"));
   console.log("  email       " + (emailEnabled() ? "on · from " + config.emailFrom : "off (set RESEND_API_KEY and EMAIL_FROM)"));
   console.log("  admin       " + config.publicOrigin + "/admin");

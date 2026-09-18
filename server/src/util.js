@@ -114,6 +114,8 @@ export function publicOrder(o, origin) {
     x: o.x_handle,
     tg: o.tg_handle,
     mark: o.mark == null ? null : !!o.mark,
+    wave: o.wave || 1,
+    waveNo: o.wave_no == null ? null : o.wave_no,
     amountUsdc: o.amount_usdc,
     signature: o.tx_signature,
     explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,

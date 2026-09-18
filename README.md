@@ -88,6 +88,7 @@ therefore public by definition.
 | `RESEND_API_KEY`, `EMAIL_FROM` | Optional. Blank disables the buyer's confirmation email; orders still record. |
 | `EMAIL_REPLY_TO`, `EMAIL_BCC` | Where a reply lands, and your own copy of every pass sent. |
 | `EMAIL_CARD_IMAGE` | The order card in the email. Empty reads `site/public/web/share-card.jpg`. |
+| `WAVE_TWO`, `WAVE_TWO_TARGET` | Whether a full run opens a second cut, and how many orders it takes to cut it. |
 | `AVATAR_SOURCE`, `AVATAR_DIR` | Where buyers' pictures come from and where they are kept. **Empty source means off**, not "use the default". |
 | `SITE_DIR` | Empty: API only. `../dist`: also serve the built front end. |
 | `ALLOWED_ORIGINS` | Only for the cross-origin mode above. |
@@ -302,6 +303,51 @@ This logic is deliberately free of network and database (`checkTransaction` in
 `src/solana.js`) so it can be attacked directly: `test/forgery.test.js` puts
 twenty-two forgeries through it, including each row above.
 
+### Wave two
+
+Selling out used to close the shop. It now opens a second cut, on the same form,
+the same wallet flow and the same price — the difference is what is being sold.
+Wave one is fifteen kimonos that exist. Wave two is a conditional pre-order:
+**it is confirmed once enough orders come in to cut it and reach Breakpoint on
+time, and if it does not go ahead every payment is returned in full.**
+
+That sentence lives in one constant in the page and appears three times — before
+the details are typed, again on the pay step with the money in front of them,
+and in the FAQ. Three hand-written copies of a refund promise is how they end up
+disagreeing about what was promised.
+
+A wave-two order is deliberately *not* a piece:
+
+| | wave one | wave two |
+| --- | --- | --- |
+| `piece_no` | 1–15, `UNIQUE` | **null** — there is no piece yet |
+| `pickup_code` | issued on payment | **null** — nothing to hand over |
+| position | the piece number | `wave_no`, counting from 1 again |
+| confirmation | the pass, with the QR | a letter stating the condition and the refund |
+| can it sell out | yes, at `CAP` | no — confirmed by volume, not capped by it |
+
+`piece_no` and `wave_no` are separate columns rather than one shared counter,
+because `piece_no` is `UNIQUE` across the table and wave two starts at one again
+— sharing it would have wave two colliding with the run on its very first order.
+
+**The counters the page shows are wave-one only.** `paidCount`, `takenCount` and
+`publicBuyers` all carry `wave = 1`. The moment a wave-two order counts as
+"sold", the site tells the world it sold fifteen kimonos it has not made.
+
+The wave is decided on the server, in `createPendingOrder`, never taken from the
+request — a client asking for wave one after the run filled would be asking for
+a piece that does not exist. `cap.test.js` races forty processes at fifteen
+pieces and now asserts the seam as well: fifteen get numbered pieces, the other
+twenty-five land in wave two with places 1–25, nobody is refused, and no
+wave-two row is handed a piece number.
+
+Wave two does not apply to the **overflow** case below. Someone whose payment
+confirms just after the last piece is gone paid for a kimono that exists, not
+for a conditional cut, so that stays a refund rather than being quietly
+converted into a different product.
+
+Set `WAVE_TWO=0` to go back to a closed shop on a full run.
+
 ### The cap
 
 Enforced in SQLite and nowhere else. Every write that can consume a slot runs
@@ -489,6 +535,10 @@ session is not the same as holding an admin one.
 - `migrate.test.js` — the `mark` column arriving on a ledger that already holds
   a sale: that it boots, that the order survives, that an unasked order reads
   null rather than zero, and that a second boot does not add the column twice.
+- `wave.test.js` — the seam at the fifteenth: that a sixteenth buyer is not
+  refused, lands in wave two with a place and no piece and no pickup code, that
+  the run's own counters do not move when they do, and that `WAVE_TWO=0` closes
+  the shop the way it used to.
 - `avatar.test.js` — buyers' pictures, against a stand-in source: that a miss
   writes no file and asks for no placeholder, that HTML and oversized responses
   are refused, that a handle shaped like a path never reaches the filesystem,

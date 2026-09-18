@@ -291,6 +291,162 @@ export function sheetText(order) {
   ].filter(function (l) { return l !== null; }).join("\n");
 }
 
+/* ---------- wave two ---------- */
+
+/* A different letter, because a different thing was bought. There is no pickup
+   code and no QR: nothing exists to collect yet, and a pass for a garment that
+   may not be cut would be worse than no pass at all. What this has to carry
+   instead is the condition and the refund, stated plainly and early — the buyer
+   has paid in full for something conditional, and the page said so, so the
+   confirmation must say so too rather than reading like a normal receipt. */
+export function waveTwoHtml(order) {
+  var tx = explorerTx(order.tx_signature);
+  return `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width">
+<meta name="color-scheme" content="dark"><meta name="supported-color-schemes" content="dark">
+<title>You are in wave two</title></head>
+<body style="margin:0;padding:0;background:${GROUND};color:${INK};" bgcolor="${GROUND}">
+<div style="display:none;max-height:0;overflow:hidden;opacity:0;">Your place in the second cut is held. If it does not go ahead, your payment comes back in full.</div>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${GROUND}" style="background:${GROUND};">
+<tr><td align="center" style="padding:44px 16px;">
+<table role="presentation" width="520" cellpadding="0" cellspacing="0" border="0" style="width:100%;max-width:520px;">
+
+  <tr><td style="font:300 9px/1.4 ${UI};letter-spacing:.34em;text-transform:uppercase;color:${ACCENT};padding-bottom:14px;">
+    Wave two
+  </td></tr>
+
+  <tr><td style="font:300 32px/1.2 ${ED};color:${INK};padding-bottom:22px;">
+    You are in wave two.
+  </td></tr>
+
+  <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:10px;">
+    Thank you for backing a second cut of the 2026 Breakpoint Kimono,
+    ${esc(firstName(order.name))}. The first fifteen went, and you are in the
+    run that follows them.
+  </td></tr>
+  <tr><td style="font:300 14.5px/1.75 ${UI};color:${INK_72};padding-bottom:28px;">
+    We confirm wave two once enough orders come in to cut it and reach
+    Breakpoint on time. You will hear either way.
+  </td></tr>
+
+  ${cardImage ? `<tr><td style="border:1px solid ${HAIR};">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+      <tr><td style="font-size:0;line-height:0;">
+        <img src="cid:order-card" width="518" alt="The 2026 Breakpoint Kimono"
+             style="display:block;width:100%;max-width:518px;height:auto;border:0;background:#0E0E0E;">
+      </td></tr>
+    </table>
+  </td></tr>
+  <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>` : ""}
+
+  <!-- the condition, in the place a pickup pass would have been -->
+  <tr><td style="border-left:2px solid ${ACCENT};padding:14px 16px;font:300 13px/1.8 ${UI};color:${INK_72};">
+    <span style="color:${INK};">If wave two does not go ahead, your ${config.priceUsdc} USDC
+    comes back in full.</span> You do not have to ask, and you can cancel any
+    time before it is confirmed by replying to this email.
+  </td></tr>
+
+  <tr><td style="height:20px;line-height:20px;font-size:0;">&nbsp;</td></tr>
+
+  <tr><td style="border-bottom:1px solid ${HAIR};padding:9px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" style="font:300 12px/1.5 ${UI};letter-spacing:.06em;color:${INK_45};">Wave two, order</td>
+      <td align="right" style="font:300 12px/1.5 ${UI};color:${INK};">no. ${order.wave_no}</td>
+    </tr></table>
+  </td></tr>
+  ${markLine(order) ? `<tr><td style="border-bottom:1px solid ${HAIR};padding:9px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" style="font:300 12px/1.5 ${UI};letter-spacing:.06em;color:${INK_45};">Inner pocket</td>
+      <td align="right" style="font:300 12px/1.5 ${UI};color:${INK};">${esc(markLine(order))}</td>
+    </tr></table>
+  </td></tr>` : ""}
+  <tr><td style="border-bottom:1px solid ${HAIR};padding:9px 0;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"><tr>
+      <td align="left" style="font:300 12px/1.5 ${UI};letter-spacing:.06em;color:${INK_45};">Paid</td>
+      <td align="right" style="font:300 12px/1.5 ${UI};color:${INK};">
+        ${config.priceUsdc} USDC
+        <span style="color:${HAIR};padding:0 8px;">·</span>
+        <a href="${esc(tx)}" style="color:${LINK};text-decoration:none;">on chain ↗</a>
+      </td>
+    </tr></table>
+  </td></tr>
+
+  <tr><td style="font:300 12.5px/1.8 ${UI};color:${INK_72};padding-top:26px;">
+    Questions, or want to cancel? Reply here, or
+    <a href="https://x.com/shizudio" style="color:${LINK};text-decoration:none;">@shizudio</a> on X.
+  </td></tr>
+
+  <tr><td style="font:300 9px/1.4 ${UI};letter-spacing:.3em;text-transform:uppercase;color:${INK_40};padding-top:30px;">
+    Shizudio · Order ${esc(order.id)}
+  </td></tr>
+
+</table>
+</td></tr></table>
+</body></html>`;
+}
+
+export function waveTwoText(order) {
+  return [
+    "You are in wave two.",
+    "",
+    "Thank you for backing a second cut of the 2026 Breakpoint Kimono, " +
+      firstName(order.name) + ". The first fifteen went, and you are in the run",
+    "that follows them.",
+    "",
+    "We confirm wave two once enough orders come in to cut it and reach",
+    "Breakpoint on time. You will hear either way.",
+    "",
+    "IF WAVE TWO DOES NOT GO AHEAD, YOUR " + config.priceUsdc + " USDC COMES BACK IN FULL.",
+    "You do not have to ask, and you can cancel any time before it is confirmed",
+    "by replying to this email.",
+    "",
+    "Wave two, order   no. " + order.wave_no,
+    markLine(order) ? "Inner pocket      " + markLine(order) : null,
+    "Paid              " + config.priceUsdc + " USDC",
+    "On chain          " + explorerTx(order.tx_signature),
+    "Order             " + order.id,
+    "",
+    "Questions, or want to cancel? Reply here, or @shizudio on X."
+  ].filter(function (l) { return l !== null; }).join("\n");
+}
+
+/* Same contract as the pass: fire-and-forget, refused if it has already gone,
+   and unable to fail the sale. */
+export async function sendWaveTwoConfirmation(order, opts) {
+  var force = !!(opts && opts.force);
+  if (!enabled) return { ok: false, reason: "DISABLED" };
+  if (!order || order.status !== "paid" || order.wave !== 2) {
+    return { ok: false, reason: "NOT_WAVE_TWO" };
+  }
+  if (!force && hasEvent(order.id, "email.sent")) return { ok: false, reason: "ALREADY_SENT" };
+
+  var payload = {
+    from: config.emailFrom,
+    to: [order.email],
+    subject: "You are in wave two — the second cut of the Breakpoint Kimono",
+    html: waveTwoHtml(order),
+    text: waveTwoText(order),
+    attachments: []
+  };
+  if (cardImage) payload.attachments.push({
+    filename: "breakpoint-kimono.jpg",
+    content: cardImage.toString("base64"),
+    content_type: "image/jpeg",
+    content_id: "order-card"
+  });
+  if (config.emailReplyTo) payload.reply_to = config.emailReplyTo;
+  if (config.emailBcc) payload.bcc = [config.emailBcc];
+
+  var out = await send(payload);
+  if (!out || !out.ok) {
+    logEvent(order.id, "email.failed", (out && out.detail) || "unknown");
+    return { ok: false, reason: "SEND_FAILED", detail: out && out.detail };
+  }
+  logEvent(order.id, "email.sent", order.email + (out.id ? " " + out.id : ""));
+  return { ok: true, id: out.id };
+}
+
 /* The one call the confirm route makes. Returns a reason rather than throwing,
    so the caller can log it and get on with answering the buyer.
 

@@ -73,6 +73,29 @@ export function notifyPaid(order) {
   return send(lines.filter(function (l) { return l !== null; }).join("\n"));
 }
 
+/* A commitment to the second cut. Not a sale of a kimono — nothing is made yet
+   — so it reads as what it is: one more towards the number that decides whether
+   wave two happens at all, and money that has to go back if it does not. */
+export function notifyWaveTwo(order, committed) {
+  return send([
+    "<b>Wave two — " + committed + " committed</b>",
+    "",
+    esc(order.name),
+    esc(order.email),
+    order.x_handle ? "X: @" + esc(order.x_handle) : null,
+    order.tg_handle ? "TG: @" + esc(order.tg_handle) : null,
+    "",
+    order.mark == null
+      ? "Inner pocket: <b>not asked</b>"
+      : "Inner pocket: <b>" + (order.mark ? "Solana mark" : "no mark") + "</b>",
+    "",
+    "Order: <code>" + esc(order.id) + "</code>",
+    config.priceUsdc + " USDC · <a href=\"" + explorerTx(order.tx_signature) + "\">transaction</a>",
+    "",
+    "Refundable in full until the cut is confirmed."
+  ].filter(function (l) { return l !== null; }).join("\n"));
+}
+
 /* Someone paid after the last piece was claimed. This is the message that has
    to arrive: there is money in the treasury that owes a refund. */
 export function notifyOverflow(order) {
