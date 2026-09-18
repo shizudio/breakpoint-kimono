@@ -546,7 +546,7 @@ the dependency, run `npm run vendor` and update `WEB3_SRC` in `site/index.html`.
 
 | | |
 | --- | --- |
-| Storefront | **https://breakpoint-kimono.vercel.app** — Vercel project `breakpoint-kimono`, production branch `feat/server`. Every push to that branch deploys here. |
+| Storefront | **https://www.solkimono.fun** — Vercel project `breakpoint-kimono`, production branch `feat/server`. Every push to that branch deploys here. |
 | API + ledger | **34.124.147.154** — the process in `server/`, and `data/orders.db` on its disk |
 
 Vercel serves `dist/` and reverse-proxies `/api`, `/admin` and `/vendor/jsqr.js`
@@ -555,19 +555,31 @@ to that host, so the browser only ever sees one origin. The rewrites are in
 
 Two traps live here, and both cost an afternoon once already.
 
-**`breakpoint-kimono-presale.vercel.app` is not this project.** It is a separate
-deployment on someone else's Vercel account, frozen at an older commit, and it
-cannot be redeployed from here — the API answers "you don't have access" for
-that hostname. It looked like the live shop for a while only because the presale
-host is what `PUBLIC_ORIGIN` named, so it was the one hostname where a wallet
-would sign. Everything pushed to `feat/server` lands on
-`breakpoint-kimono.vercel.app` and nowhere else.
+**Three URLs point at this thing and only one is real.** The shop is
+`www.solkimono.fun`. `breakpoint-kimono.vercel.app` was the project's old
+`.vercel.app` name and now answers `DEPLOYMENT_NOT_FOUND` — anything shared
+before the domain moved is a dead link.
+`breakpoint-kimono-presale.vercel.app` is not this project at all: it is a
+separate deployment on someone else's Vercel account, frozen at an older commit,
+which the API refuses to let us near — "you don't have access". It still serves
+a working-looking shop against **this same ledger**, so an order placed there
+lands in `data/orders.db` from a front end nobody here maintains. It should be
+taken down.
 
 `PUBLIC_ORIGIN` decides which hostname can sell, because it is the domain in the
 Sign In With Solana message and a wallet refuses a request whose domain is not
-the origin serving the page. Point it at the storefront above, and take the
-other deployment down — a stale copy that can still take sign-ins is worse than
-a dead link, because buyers reach a shop that is not the one being maintained.
+the origin serving the page. It must equal the storefront above, exactly,
+including the `www`. Read back what the server thinks it is:
+
+    curl -s -X POST https://www.solkimono.fun/api/session/nonce \
+      -H 'content-type: application/json' -d '{"pubkey":"<any address>"}'
+
+The first line of `message` is the domain the wallet will show.
+
+The share card's `og:url`, `og:image`, `twitter:image` and the script's
+`SHARE_URL` are absolute and hard-coded. **Move the domain and all four move
+together** — they pointed at the other account's copy for a while, which meant
+every "Post on X" sent people to a shop that was not this one.
 
 **Vercel's CDN will lie to you while you check.** A stale edge copy survived long
 enough here to make a finished deploy look like it never happened — a holding
