@@ -97,6 +97,13 @@ check("and no pickup code", lateePaid.pickup_code === null);
 check("the trail records it as a conversion", store.hasEvent(late.id, "order.overflow.wave2"));
 check("and not as an ordinary wave-two order", !store.hasEvent(late.id, "order.paid.wave2"));
 check("the note says so in words", /moved to wave two/.test(lateePaid.notes || ""), lateePaid.notes);
+/* A column, not the prose: it decides which refund the buyer is offered, and it
+   has to survive them closing the tab and coming back. */
+check("and a column records it", lateePaid.wave_missed === 1, lateePaid.wave_missed);
+var reread = store.getOrder(late.id);
+check("which survives a reload", reread.wave_missed === 1);
+var chosenAgain = store.getOrder(w2a.id);
+check("while a chosen wave-two order carries none", !chosenAgain.wave_missed, chosenAgain.wave_missed);
 check("nothing is left owing a refund", store.allOrders().filter(function (o) { return o.status === "overflow"; }).length === 0);
 check("the run is still exactly fifteen", store.paidCount() === 15, store.paidCount());
 

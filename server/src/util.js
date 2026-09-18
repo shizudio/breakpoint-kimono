@@ -116,6 +116,9 @@ export function publicOrder(o, origin) {
     mark: o.mark == null ? null : !!o.mark,
     wave: o.wave || 1,
     waveNo: o.wave_no == null ? null : o.wave_no,
+    /* Survives a reload, so someone who comes back to their order still sees
+       that the piece was missed and that the refund is theirs for the asking. */
+    missedRun: !!o.wave_missed,
     amountUsdc: o.amount_usdc,
     signature: o.tx_signature,
     explorer: o.tx_signature ? explorerTx(o.tx_signature) : null,

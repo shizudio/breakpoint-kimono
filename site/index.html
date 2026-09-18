@@ -1449,7 +1449,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
          choosing it, and the screen has to say which one happened — otherwise
          someone who paid for a piece that exists is quietly shown a receipt for
          something else. */
-      var missed = !!state.missedRun;
+      var missed = !!(state.missedRun || w.missedRun);
       panel.appendChild(eyebrow(missed ? "Missed by seconds" : "Wave two"));
       panel.appendChild(title(missed ? "You missed it by seconds." : "You are in wave two."));
       panel.appendChild(el("p", {

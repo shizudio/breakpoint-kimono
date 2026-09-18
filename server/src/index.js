@@ -274,7 +274,7 @@ route("POST", /^\/api\/orders\/([A-Za-z0-9]{16})\/confirm$/, async function (req
   if (paid.wave === 2) {
     /* Read back off the trail: this row was converted after missing the run,
        not chosen. It changes what is said to them and what is said to us. */
-    var missedRun = store.hasEvent(paid.id, "order.overflow.wave2");
+    var missedRun = !!paid.wave_missed;
     /* No piece, no pickup code, nothing at a counter yet — so none of the
        wave-one apparatus fires. What goes out says what was actually bought:
        a place in the second cut, and the refund if it does not happen. */

@@ -113,6 +113,12 @@ addColumn("orders", "mark", "INTEGER");
    one: everything written before wave two existed is the first run. */
 addColumn("orders", "wave", "INTEGER NOT NULL DEFAULT 1");
 addColumn("orders", "wave_no", "INTEGER");
+/* Whether this wave-two row was converted after missing the run rather than
+   chosen. A column and not a reading of the notes prose, because it decides
+   which refund a buyer is offered — the unconditional one, or the one that
+   depends on the cut going ahead — and that is not a thing to infer from a
+   sentence someone may reword later. */
+addColumn("orders", "wave_missed", "INTEGER");
 db.exec("CREATE INDEX IF NOT EXISTS orders_wave ON orders(wave)");
 
 var q = function (sql) { return db.prepare(sql); };
@@ -359,7 +365,7 @@ export function markPaid(orderId_, signature) {
       if (config.waveTwo) {
         var nextAfterMiss = q(`SELECT COALESCE(MAX(wave_no), 0) + 1 AS n FROM orders
                                WHERE wave = 2 AND status = 'paid'`).get().n;
-        q(`UPDATE orders SET status='paid', wave=2, wave_no=?, tx_signature=?, paid_at=?,
+        q(`UPDATE orders SET status='paid', wave=2, wave_no=?, wave_missed=1, tx_signature=?, paid_at=?,
              notes='Paid as the run sold out — moved to wave two, refundable on request.'
            WHERE id=?`).run(nextAfterMiss, signature, now, orderId_);
         /* Its own kind, so the trail says this row was converted rather than
