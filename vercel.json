@@ -4,19 +4,6 @@
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
   "cleanUrls": true,
-  "redirects": [
-    {
-      "source": "/:path*",
-      "has": [
-        {
-          "type": "host",
-          "value": "breakpoint-kimono.vercel.app"
-        }
-      ],
-      "destination": "https://breakpoint-kimono-presale.vercel.app/:path*",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     {
       "source": "/api/:path*",

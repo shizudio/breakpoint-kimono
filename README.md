@@ -503,7 +503,7 @@ the dependency, run `npm run vendor` and update `WEB3_SRC` in `site/index.html`.
 
 | | |
 | --- | --- |
-| Storefront | **https://breakpoint-kimono.vercel.app** — Vercel project `breakpoint-kimono`, production branch `feat/server` |
+| Storefront | **https://breakpoint-kimono.vercel.app** — Vercel project `breakpoint-kimono`, production branch `feat/server`. Every push to that branch deploys here. |
 | API + ledger | **34.124.147.154** — the process in `server/`, and `data/orders.db` on its disk |
 
 Vercel serves `dist/` and reverse-proxies `/api`, `/admin` and `/vendor/jsqr.js`
@@ -512,18 +512,19 @@ to that host, so the browser only ever sees one origin. The rewrites are in
 
 Two traps live here, and both cost an afternoon once already.
 
-**Only one hostname can work at a time.** The project answers on two names, and
-`PUBLIC_ORIGIN` can equal only one of them — so the other looks perfectly alive,
-serves the same build, proxies the same API, and then refuses every sign-in, for
-the reason below. That is the worst shape a spare domain can take: not down, but
-quietly unable to sell.
+**`breakpoint-kimono-presale.vercel.app` is not this project.** It is a separate
+deployment on someone else's Vercel account, frozen at an older commit, and it
+cannot be redeployed from here — the API answers "you don't have access" for
+that hostname. It looked like the live shop for a while only because the presale
+host is what `PUBLIC_ORIGIN` named, so it was the one hostname where a wallet
+would sign. Everything pushed to `feat/server` lands on
+`breakpoint-kimono.vercel.app` and nowhere else.
 
-So the shop is `breakpoint-kimono-presale.vercel.app`, and `vercel.json` sends
-everything on `breakpoint-kimono.vercel.app` there with a host-conditional
-redirect. Redirects run before rewrites, so the old name is out of service
-whole — page, `/api` and `/admin` alike. It is a 307 rather than a 308 on
-purpose: browsers cache a permanent redirect indefinitely, and the day a real
-domain is attached, that cache is on every machine that ever visited.
+`PUBLIC_ORIGIN` decides which hostname can sell, because it is the domain in the
+Sign In With Solana message and a wallet refuses a request whose domain is not
+the origin serving the page. Point it at the storefront above, and take the
+other deployment down — a stale copy that can still take sign-ins is worse than
+a dead link, because buyers reach a shop that is not the one being maintained.
 
 **Vercel's CDN will lie to you while you check.** A stale edge copy survived long
 enough here to make a finished deploy look like it never happened — a holding
