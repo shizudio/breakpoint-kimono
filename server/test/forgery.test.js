@@ -15,9 +15,6 @@
    not decide what these assertions mean — the whole file is about exact
    amounts. Hence the dynamic imports. */
 process.env.PRICE_USDC = "300";
-/* Pinning a price means pinning the struck-out one too, or a discount in the
-   developer\'s own .env leaks in and the server refuses to start. */
-process.env.LIST_PRICE_USDC = "0";
 process.env.TREASURY = "DWDeu7snxGK9uscdJbtjcQ4oU9cCdpNZPaate6BVqEuD";
 process.env.USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 process.env.NETWORK = "mainnet";

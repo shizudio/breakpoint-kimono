@@ -28,9 +28,7 @@ var child = spawn(process.execPath, ["--env-file=.env", "src/index.js"], {
   cwd: resolve(here, ".."),
   env: Object.assign({}, process.env, {
     PORT: String(PORT), DB_PATH: "../data/test/reconnect.db", PUBLIC_ORIGIN: BASE,
-    SESSION_SECRET: "s".repeat(64), PRICE_USDC: "300",
-    /* These walk the undiscounted flow; the struck price has its own test. */
-    LIST_PRICE_USDC: "0", SITE_DIR: "",
+    SESSION_SECRET: "s".repeat(64), PRICE_USDC: "300", SITE_DIR: "",
     ADMIN_WALLETS: "DWDeu7snxGK9uscdJbtjcQ4oU9cCdpNZPaate6BVqEuD",
     TELEGRAM_BOT_TOKEN: "", TELEGRAM_CHAT_ID: ""
   }),

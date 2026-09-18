@@ -41,12 +41,6 @@ export var config = {
   usdcMint: opt("USDC_MINT", DEFAULT_MINTS[NETWORK]),
   usdcDecimals: 6,
   priceUsdc: num("PRICE_USDC", 300),
-  /* What it cost before the discount, shown struck through beside the price.
-     0 means no discount and nothing struck. It is presentation only — the
-     charge, the chain check and the refund all read priceUsdc — but it is
-     served from here rather than written into the page so the two can never
-     disagree, which is the one way a discount becomes a lie. */
-  listPriceUsdc: num("LIST_PRICE_USDC", 0),
   cap: num("CAP", 15),
   /* A pending order holds a slot for this long. Long enough to approve a wallet
      prompt and land a transaction; short enough that an abandoned checkout does
@@ -128,17 +122,6 @@ if (config.allowedOrigins.length && !config.secureCookies) {
 
 if (!config.adminWallets.length) {
   throw new Error("ADMIN_WALLETS must name at least one Solana address");
-}
-
-/* A "discount" that is not one is worse than no discount: it is a claim about
-   the price that the receipt contradicts. Refuse to start rather than advertise
-   it. */
-if (config.listPriceUsdc && config.listPriceUsdc <= config.priceUsdc) {
-  throw new Error(
-    "LIST_PRICE_USDC (" + config.listPriceUsdc + ") must be greater than PRICE_USDC (" +
-    config.priceUsdc + "), or left at 0. It is the crossed-out price, so a value " +
-    "at or below what you actually charge would advertise a saving that is not there."
-  );
 }
 
 if (!Number.isFinite(config.presaleEndsAt)) {

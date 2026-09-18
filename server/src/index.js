@@ -76,7 +76,6 @@ function stateBody(wallet) {
     taken: store.takenCount(),
     soldOut: sold >= config.cap,
     priceUsdc: config.priceUsdc,
-    listPriceUsdc: config.listPriceUsdc,
     currency: "USDC",
     network: config.network,
     presaleEndsAt: config.presaleEndsAt,
@@ -536,8 +535,7 @@ server.listen(config.port, function () {
   console.log("  listening   http://localhost:" + config.port);
   console.log("  network     " + config.network);
   console.log("  treasury    " + config.treasury);
-  console.log("  price       " + config.priceUsdc + " USDC" +
-    (config.listPriceUsdc ? "  (was " + config.listPriceUsdc + ")" : ""));
+  console.log("  price       " + config.priceUsdc + " USDC");
   console.log("  sold        " + sold + " / " + config.cap);
   console.log("  telegram    " + (telegramEnabled() ? "on" : "off (set TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID)"));
   console.log("  wave two    " + (config.waveTwo

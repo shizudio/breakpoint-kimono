@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Get your kimono for this Breakpoint</title>
-<meta name="description" content="A fifteen-piece run of the Breakpoint Kimono. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $260, Solana Breakpoint 2026.">
+<meta name="description" content="A fifteen-piece run of the Breakpoint Kimono. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
 <meta name="theme-color" content="#000000">
 <link rel="icon" href="/assets/logo.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Get your kimono for this Breakpoint">
-<meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $260, Solana Breakpoint 2026.">
+<meta property="og:description" content="Fifteen pieces. Song brocade collar, padded cotton–nylon body, 岩花 embroidery. $300, Solana Breakpoint 2026.">
 <meta property="og:url" content="https://www.solkimono.fun/">
 <meta property="og:image" content="https://www.solkimono.fun/web/share-card.jpg">
 <meta property="og:image:width" content="1200">
@@ -161,9 +161,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .field-row.invalid .field-at,.field-row.invalid>.field{border-bottom-color:var(--accent)}
 .field-err{margin:0;font-size:11.5px;line-height:1.6;opacity:.72}
 .field-hint{margin:2px 0 0;font-size:11.5px;line-height:1.7;opacity:.4}
-/* The crossed-out price. Lighter and smaller than what is actually charged, so
-   the eye lands on the number being asked for rather than the one that is not. */
-.was{text-decoration:line-through;opacity:.42;font-weight:300;margin-right:.42em}
 .soldout{margin:0;font-family:var(--ed);font-size:24px;font-style:italic;text-align:center;opacity:.72}
 .mark-shot{display:block;width:100%;height:auto;border:.5px solid var(--hair);background:var(--ground-alt)}
 .choice{display:flex;gap:12px}
@@ -338,7 +335,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         <div class="bubbles" id="bubbles"></div>
         <span class="proof-text" id="proofText"></span>
       </div>
-      <button class="cta" data-open-wallet>Reserve yours</button>
+      <button class="cta" data-open-wallet>Reserve yours at $300</button>
     </div>
   </div>
 </div>
@@ -435,15 +432,15 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     <p class="eyebrow">006 — Presale</p>
     <div class="order-card">
       <div class="order-head">
-        <h2 id="priceHead"><span>per piece</span></h2>
+        <h2>$300 <span>per piece</span></h2>
         <span style="font-size:9.5px;letter-spacing:.26em;text-transform:uppercase;opacity:.5"><span id="remaining">10</span> of 15 remaining · Ships Nov</span>
       </div>
       <div id="orderLive" style="display:flex;flex-direction:column;gap:18px">
-        <button class="btn-purple" data-open-wallet>Reserve yours</button>
+        <button class="btn-purple" data-open-wallet>Reserve yours at $300</button>
       </div>
       <div id="soldOut" hidden style="display:flex;flex-direction:column;gap:18px">
         <p class="soldout" style="margin:0">All fifteen are accounted for. Wave two is open.</p>
-        <button class="btn-purple" data-open-wallet>Join wave two</button>
+        <button class="btn-purple" data-open-wallet>Join wave two · $300</button>
         <p class="footnote" style="text-align:center;margin:-4px 0 0">Wave two is confirmed once enough orders come in for us to cut it and reach Breakpoint on time. If it does not go ahead, every payment is returned in full.</p>
       </div>
     </div>
@@ -578,24 +575,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   var WAVE_TWO_TERMS = "Wave two is confirmed once enough orders come in for us to cut it and " +
     "reach Breakpoint on time. If it does not go ahead, every payment is returned in full.";
 
-  /* Every price on the page comes through here. The struck-out number is only
-     ever the server's, never a constant in the markup — a hard-coded "was $300"
-     outlives the discount it describes. */
-  function priceText(prefix, suffix) {
-    return (prefix || "") + "$" + state.priceUsdc + (suffix || "");
-  }
-  function priceInto(node, prefix, suffix) {
-    node.textContent = "";
-    /* Label first, then the old price, then the one being asked for: "Reserve
-       yours at $300 $260" reads as a sentence. Struck price first reads as a
-       different word stuck to the front of the label. */
-    if (prefix) node.appendChild(document.createTextNode(prefix));
-    if (state.listPriceUsdc > state.priceUsdc) {
-      node.appendChild(el("span", { class: "was", text: "$" + state.listPriceUsdc }));
-    }
-    node.appendChild(document.createTextNode("$" + state.priceUsdc + (suffix || "")));
-  }
-
   var TINTS = ["#3B2F45", "#28332C", "#3A2E26", "#2C2A3A", "#33272F"];
   /* Ours first. These two are cropped and colour-matched by hand, and the point
      of a hand-picked image is that nothing fetched later overrides it. */
@@ -681,7 +660,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     presaleEndsAt: PRESALE_ENDS,
     presaleOver: false,
     priceUsdc: 300,
-    listPriceUsdc: 0,        // struck-through original; 0 means no discount
 
     modal: null,
     wallet: null,            // the signed-in address
@@ -750,7 +728,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     state.presaleEndsAt = s.presaleEndsAt;
     state.presaleOver = s.presaleOver;
     state.priceUsdc = s.priceUsdc;
-    state.listPriceUsdc = s.listPriceUsdc || 0;
     if (s.wallet && s.wallet !== state.wallet) {
       state.wallet = s.wallet;
       refreshMyOrders();
@@ -839,14 +816,9 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     /* The hero button sits outside #orderLive, so hiding that block leaves it
        standing. It used to go on saying "Reserve yours" after the run was gone,
        and walked people into a form that could only end in a refusal. */
-    Array.prototype.forEach.call(document.querySelectorAll("[data-open-wallet]"), function (b) {
-      priceInto(b, toWaveTwo ? "Join wave two · " : "Reserve yours at ");
-    });
-    var head = $("#priceHead");
-    if (head) {
-      priceInto(head, "", " ");
-      head.appendChild(el("span", { text: "per piece" }));
-    }
+    var hero = $(".cta");
+    if (hero) hero.textContent = toWaveTwo ? "Join wave two · $" + state.priceUsdc
+                                           : "Reserve yours at $" + state.priceUsdc;
   }
 
   function renderLeaderboard() {
@@ -944,7 +916,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     { q: "Why only fifteen?", a: "Every piece is cut and finished on one table. Fifteen is what we can make properly between now and Breakpoint without handing the work to someone else." },
     { q: "When does it ship?", a: "We cut through October and ship in November, ahead of the event. If you would rather collect yours in person at Breakpoint, say so in the form and we will hold it." },
     { q: "What sizes are there?", a: "The kimono is cut in one generous size that falls differently depending on height and how you belt it. We will send a measurement sheet with your confirmation." },
-    { q: "How does paying work?", a: "Connect a Solana wallet, leave your details, and approve a single transfer of the price above to the studio address. Your piece is held while you pay and confirmed once the transfer lands on chain — we check the chain itself, not your browser. No mint, no token, no secondary anything." },
+    { q: "How does paying work?", a: "Connect a Solana wallet, leave your details, and approve a single 300 USDC transfer to the studio address. Your piece is held while you pay and confirmed once the transfer lands on chain — we check the chain itself, not your browser. No mint, no token, no secondary anything." },
     { q: "The fifteen are gone. What is wave two?", a: "A second cut, on the same terms and the same price. " + WAVE_TWO_TERMS + " Until it is confirmed you can cancel and be refunded at any point, by writing to @shizudio. There is no pickup code yet, because there is nothing to hand over until the cut is made — once wave two is confirmed we send your claim code by email, and on Telegram if you left a handle." },
     { q: "How do I collect it at Breakpoint?", a: "Paying gives you a pickup code and a QR you can screenshot. Show either at the counter and we hand you your piece — it works offline, and your wallet can always reopen it." },
     { q: "What if I cannot use a wallet?", a: "Write to @shizudio. We reply within a day with payment details, including bank transfer, and your place in the run is held while we wait." },
@@ -1411,13 +1383,6 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     } else if (state.modal === "pay" || state.modal === "paying") {
       panel.appendChild(eyebrow(state.wave === 2 ? "Wave two · step four of four" : "Step four of four"));
       panel.appendChild(title("Pay " + state.priceUsdc + " USDC"));
-      if (state.listPriceUsdc > state.priceUsdc) {
-        panel.appendChild(el("p", {
-          class: "footnote",
-          html: '<span class="was">$' + state.listPriceUsdc + "</span> $" + state.priceUsdc +
-                " — you save $" + (state.listPriceUsdc - state.priceUsdc) + " on the presale."
-        }));
-      }
 
       if (state.solanaMark !== null) panel.appendChild(el("p", {
         class: "footnote",

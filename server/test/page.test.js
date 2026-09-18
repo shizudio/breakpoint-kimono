@@ -32,8 +32,6 @@ var child = spawn(process.execPath, ["--env-file=.env", "src/index.js"], {
        tests assert — this file checks for "Pay 300 USDC" and for the treasury's
        own token account by name. */
     PRICE_USDC: "300",
-    /* These walk the undiscounted flow; the struck price has its own test. */
-    LIST_PRICE_USDC: "0",
     TREASURY: "DWDeu7snxGK9uscdJbtjcQ4oU9cCdpNZPaate6BVqEuD",
     TELEGRAM_BOT_TOKEN: "", TELEGRAM_CHAT_ID: ""
   }),

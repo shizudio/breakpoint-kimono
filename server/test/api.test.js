@@ -37,7 +37,7 @@ var child = spawn(process.execPath, ["--env-file=.env", "src/index.js"], {
     /* Pinned, not inherited. The suite loads the real .env for RPC_URL, and a
        price changed there for a cheap rehearsal must not decide what the tests
        assert. */
-    PRICE_USDC: "300", LIST_PRICE_USDC: "0",
+    PRICE_USDC: "300",
     TELEGRAM_BOT_TOKEN: "", TELEGRAM_CHAT_ID: ""
   }),
   stdio: ["ignore", "pipe", "pipe"]

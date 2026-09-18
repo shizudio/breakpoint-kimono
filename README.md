@@ -650,16 +650,6 @@ including the `www`. Read back what the server thinks it is:
 
 The first line of `message` is the domain the wallet will show.
 
-`PRICE_USDC` is the only price. `LIST_PRICE_USDC` is the number struck through
-beside it — presentation only, served from the same place so the page cannot
-advertise a figure the chain check would reject, and the server refuses to start
-if it is not greater than what is actually charged. No price appears in the
-markup at all: every one is filled in from `/api/state` on the first render,
-because a price in the HTML is a price that can go stale, and a stale one under
-a discount is a saving being promised that nobody will honour. The two `meta`
-descriptions are the exception — crawlers read those before any script runs —
-so they name the price literally and have to be edited when it changes.
-
 The share card's `og:url`, `og:image`, `twitter:image` and the script's
 `SHARE_URL` are absolute and hard-coded. **Move the domain and all four move
 together** — they pointed at the other account's copy for a while, which meant
