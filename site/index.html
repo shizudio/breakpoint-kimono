@@ -162,6 +162,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
 .choice button{flex:1;font-size:9.5px;font-weight:300;letter-spacing:.24em;text-transform:uppercase;padding:17px;border:1px solid var(--hair-strong);background:none;color:var(--ink);cursor:pointer;transition:border-color .2s,background .2s}
 .choice button:hover{border-color:var(--accent)}
 .choice button[disabled]{opacity:.5;cursor:default}
+.choice button.chosen{border-color:var(--accent);background:rgba(153,69,255,.14)}
 
 /* modal */
 #modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:20px}
@@ -651,8 +652,24 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   function refreshMyOrders() {
     return api("GET", "/api/orders/mine").then(function (out) {
       state.myOrders = out.orders || [];
+      restoreMark();
       return state.myOrders;
     }, function () { return []; });
+  }
+
+  /* The mark is the one answer a buyer gives that changes the garment, and the
+     order already carries it — so a held piece brings its answer back rather
+     than presenting two blank buttons to someone who has already chosen. Asking
+     again with no memory is how a manufacturing instruction gets flipped by a
+     stray click, and the flip is silent on both ends: reusePendingOrder writes
+     whatever the second answer was.
+
+     Only when nothing has been chosen in this session, so a re-render — or a
+     fetch that lands after someone has just pressed Yes — cannot undo it. */
+  function restoreMark() {
+    if (state.solanaMark !== null) return;
+    var o = heldOrder() || paidOrder();
+    if (o && o.mark != null) state.solanaMark = !!o.mark;
   }
 
   function paidOrder() {
@@ -1030,6 +1047,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         /* Someone coming back to a wallet that already bought lands on their
            pass, not on an order form for a piece they cannot buy twice. */
         state.myOrders = out.orders || [];
+        restoreMark();
         var paid = paidOrder();
         if (paid) { state.order = paid; return setModal("done"); }
         setModal("details");
@@ -1295,11 +1313,20 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
       }));
       panel.appendChild(el("p", {
         class: "footnote",
-        text: "Embroidered on the inner pocket in tonal thread. Yours either way — this only decides whether the mark goes on."
+        text: state.solanaMark === null
+          ? "Embroidered on the inner pocket in tonal thread. Yours either way — this only decides whether the mark goes on."
+          : "You chose " + (state.solanaMark ? "the mark" : "no mark") + " last time. Confirm it, or change your mind."
       }));
       var markRow = el("div", { class: "choice" });
       [["Yes", true], ["No", false]].forEach(function (opt) {
-        var b = el("button", { type: "button", text: opt[0], disabled: state.busy ? "" : null });
+        /* A choice already made is shown as made. aria-pressed carries it to a
+           screen reader; the class carries it to everyone else. */
+        var chosen = state.solanaMark === opt[1];
+        var b = el("button", {
+          type: "button", text: opt[0], disabled: state.busy ? "" : null,
+          "aria-pressed": chosen ? "true" : "false",
+          class: chosen ? "chosen" : null
+        });
         b.addEventListener("click", function () {
           state.solanaMark = opt[1];
           placeOrder();   // the choice and the piece are taken together

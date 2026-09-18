@@ -183,6 +183,11 @@ try {
   await waitFor(function () { return /The Solana mark/.test(panelText()); }, "the mark step");
   check("the reference photo is shown", !!panel().querySelector(".mark-shot"));
   check("both answers are offered", panel().querySelectorAll(".choice button").length === 2);
+  /* Nothing preselected for someone who has not chosen yet. A default on the one
+     question that decides what gets embroidered would be answering it for them. */
+  check("neither answer is preselected the first time",
+    [].every.call(panel().querySelectorAll(".choice button"),
+      function (b) { return b.getAttribute("aria-pressed") === "false"; }));
   /* The mark is a manufacturing instruction, so it has to be settled before a
      piece leaves the board — not after. */
   var pre = await (await fetch(BASE + "/api/state")).json();

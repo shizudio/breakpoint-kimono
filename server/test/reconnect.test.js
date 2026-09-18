@@ -134,6 +134,11 @@ try {
   formA.querySelector("#fEmail").value = "shina@example.com";
   formA.querySelector("#fX").value = "shizudio";
   formA.dispatchEvent(new a.win.Event("submit", { bubbles: true, cancelable: true }));
+  /* The mark stands between the details and the money now. */
+  await waitFor(function () { return /The Solana mark/.test(panelA()); }, "mark step");
+  Array.prototype.slice.call(a.doc.querySelectorAll("#modal .panel .choice button"))
+    .filter(function (x) { return /^Yes$/.test(x.textContent); })[0]
+    .dispatchEvent(new a.win.MouseEvent("click", { bubbles: true }));
   await waitFor(function () { return /Pay 300 USDC/.test(panelA()); }, "pay step");
   check("a piece is held", true);
   a.dom.window.close();
@@ -174,8 +179,27 @@ try {
 
   formB.querySelector("#fEmail").value = "shina@example.com";
   formB.dispatchEvent(new b2.win.Event("submit", { bubbles: true, cancelable: true }));
+
+  /* This load never ran connectWallet, so nothing in the page remembers the
+     answer — it has to come off the order. Asking again from blank is how a
+     manufacturing instruction gets flipped by a stray click, and
+     reusePendingOrder would write the new answer without a murmur. */
+  await waitFor(function () { return /The Solana mark/.test(panelB()); }, "mark step");
+  var markButtons = Array.prototype.slice.call(b2.doc.querySelectorAll("#modal .panel .choice button"));
+  var chosen = markButtons.filter(function (x) { return x.getAttribute("aria-pressed") === "true"; });
+  check("the earlier answer comes back chosen",
+    chosen.length === 1 && /^Yes$/.test(chosen[0].textContent), chosen.map(function (x) { return x.textContent; }));
+  check("and the panel says so rather than asking cold",
+    /chose the mark last time/.test(panelB()), panelB().slice(0, 160));
+  chosen[0].dispatchEvent(new b2.win.MouseEvent("click", { bubbles: true }));
+
   await waitFor(function () { return /Pay 300 USDC/.test(panelB()); }, "pay step");
   check("the same hold is reused, not a second piece", true);
+  /* Confirming the restored answer must leave the ledger saying what it said. */
+  var mineB = await (await fetch(BASE + "/api/orders/mine", { headers: { cookie: cookie } })).json();
+  check("and the mark is unchanged in the ledger",
+    mineB.orders && mineB.orders[0] && mineB.orders[0].mark === true,
+    mineB.orders && mineB.orders[0] && mineB.orders[0].mark);
 
   calls = [];
   Array.prototype.slice.call(b2.doc.querySelectorAll("#modal .panel button"))
@@ -188,7 +212,10 @@ try {
   check("paying asks the wallet after a reload", true);
   var st = await (await fetch(BASE + "/api/state")).json();
   check("still only one piece held", st.taken === 1, st);
-  b2.dom.window.close();
+  /* Left open on purpose. The payment above never confirms here, so the page is
+     sitting in confirmPayment's retry — a real browser stops that timer when the
+     tab goes, but jsdom's close() only takes the document away and the next tick
+     then renders into nothing. Closing this one crashes the third visit. */
 
   /* ---------- third visit: the wallet has forgotten us ---------- */
   console.log("\nback later, wallet no longer approved");
@@ -204,6 +231,10 @@ try {
   formC.querySelector("#fName").value = "Shina Foo";
   formC.querySelector("#fEmail").value = "shina@example.com";
   formC.dispatchEvent(new c.win.Event("submit", { bubbles: true, cancelable: true }));
+  await waitFor(function () { return /The Solana mark/.test(panelC()); }, "mark step");
+  Array.prototype.slice.call(c.doc.querySelectorAll("#modal .panel .choice button"))
+    .filter(function (x) { return x.getAttribute("aria-pressed") === "true"; })[0]
+    .dispatchEvent(new c.win.MouseEvent("click", { bubbles: true }));
   await waitFor(function () { return /Pay 300 USDC/.test(panelC()); }, "pay step");
 
   Array.prototype.slice.call(c.doc.querySelectorAll("#modal .panel button"))
