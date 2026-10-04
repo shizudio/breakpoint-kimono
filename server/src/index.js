@@ -175,7 +175,6 @@ route("POST", /^\/api\/orders$/, async function (req, res) {
   var wallet = requireWallet(req, res); if (!wallet) return;
   var limit = rateLimit("order:" + wallet, 12, 60000);
   if (!limit.ok) return fail(res, 429, "RATE_LIMIT", "Too many attempts. Try again shortly.");
-  if (presaleOver()) return fail(res, 409, "PRESALE_OVER", "The presale has closed.");
 
   var body = await readJson(req);
   var v = validateOrder(body);

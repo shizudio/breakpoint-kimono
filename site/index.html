@@ -72,7 +72,6 @@ img{display:block}
 .hero-inner{height:100vh;height:100svh;display:flex;flex-direction:column;overflow:hidden;background:var(--ground)}
 .hero-top{position:relative;z-index:3;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:clamp(4px,1vh,10px);padding:clamp(14px,2.6vh,28px) clamp(28px,4vw,40px);border-bottom:.5px solid var(--hair);font-size:clamp(9px,1.1vw,11px);letter-spacing:.28em;text-transform:uppercase}
 .hero-top .stack{display:flex;flex-direction:column;align-items:center;gap:10px}
-#countdown{color:var(--accent2);font-size:clamp(17px,2.2vw,26px);font-weight:400;letter-spacing:.14em}
 .hero-mid{position:relative;z-index:3;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:clamp(10px,2.4vh,32px) 0 0;min-height:0;pointer-events:none}
 .hero-mid h1{margin:0;font-family:var(--ed);font-weight:300;font-size:clamp(24px,3.8vw,49px);letter-spacing:.01em;text-align:center;line-height:1.02}
 /* the image is the only flex:1 child and must never get a min-height — it absorbs the shortfall of the fixed-height hero */
@@ -320,8 +319,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   <div class="hero-inner">
     <header class="hero-top">
       <div class="stack">
-        <span style="opacity:.5">Presale closes in</span>
-        <span id="countdown">—</span>
+        <span style="opacity:.5">Now available</span>
       </div>
     </header>
     <div class="hero-mid">
@@ -760,18 +758,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     return n;
   };
 
-  /* ---------- countdown ---------- */
   function pad(n) { return String(n).padStart(2, "0"); }
-  function tickClock() {
-    var left = Math.max(0, state.presaleEndsAt - Date.now());
-    var d = Math.floor(left / 86400000),
-        h = Math.floor(left / 3600000) % 24,
-        m = Math.floor(left / 60000) % 60,
-        s = Math.floor(left / 1000) % 60;
-    $("#countdown").textContent = d + "d " + pad(h) + ":" + pad(m) + ":" + pad(s);
-  }
-  tickClock();
-  setInterval(tickClock, 1000);
 
   /* ---------- derived views ---------- */
   /* Reads naturally at any length: one name, two, a short list, or a list plus a
