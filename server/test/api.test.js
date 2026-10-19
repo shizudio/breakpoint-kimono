@@ -38,6 +38,8 @@ var child = spawn(process.execPath, ["--env-file=.env", "src/index.js"], {
        price changed there for a cheap rehearsal must not decide what the tests
        assert. */
     PRICE_USDC: "300",
+    /* The real presale has closed; the suite still needs an open shop. */
+    PRESALE_ENDS: "2099-01-01T00:00:00Z",
     TELEGRAM_BOT_TOKEN: "", TELEGRAM_CHAT_ID: ""
   }),
   stdio: ["ignore", "pipe", "pipe"]

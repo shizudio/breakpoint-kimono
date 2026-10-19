@@ -319,7 +319,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
   <div class="hero-inner">
     <header class="hero-top">
       <div class="stack">
-        <span style="opacity:.5">Now available</span>
+        <span style="opacity:.5">Order has ended</span>
       </div>
     </header>
     <div class="hero-mid">
@@ -440,6 +440,10 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         <p class="soldout" style="margin:0">All fifteen are accounted for. Wave two is open.</p>
         <button class="btn-purple" data-open-wallet>Join wave two · $300</button>
         <p class="footnote" style="text-align:center;margin:-4px 0 0">Wave two is confirmed once enough orders come in for us to cut it and reach Breakpoint on time. If it does not go ahead, every payment is returned in full.</p>
+      </div>
+      <div id="ended" hidden style="display:flex;flex-direction:column;gap:18px">
+        <p class="soldout" style="margin:0">Order has ended.</p>
+        <button class="btn-purple" data-open-wallet>View my order</button>
       </div>
     </div>
   </div>
@@ -656,7 +660,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     solanaMark: null,      // true | false — chosen at step three, no default
     pendingDetails: null,  // held between the details form and the order POST
     presaleEndsAt: PRESALE_ENDS,
-    presaleOver: false,
+    presaleOver: Date.now() > PRESALE_ENDS,
     priceUsdc: 300,
 
     modal: null,
@@ -798,13 +802,18 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
     $("#proofText").textContent = proofLine(named, Math.max(0, c - named.length));
 
     var toWaveTwo = state.soldOut && state.waveTwoOpen;
-    $("#orderLive").hidden = state.soldOut;
-    $("#soldOut").hidden = !state.soldOut;
+    /* Once ordering ends the buttons stay, but only to bring a buyer back to
+       their pass — there is nothing left to reserve. */
+    var ended = state.presaleOver;
+    $("#orderLive").hidden = ended || state.soldOut;
+    $("#soldOut").hidden = ended || !state.soldOut;
+    $("#ended").hidden = !ended;
     /* The hero button sits outside #orderLive, so hiding that block leaves it
        standing. It used to go on saying "Reserve yours" after the run was gone,
        and walked people into a form that could only end in a refusal. */
     var hero = $(".cta");
-    if (hero) hero.textContent = toWaveTwo ? "Join wave two · $" + state.priceUsdc
+    if (hero) hero.textContent = ended ? "View my order"
+                               : toWaveTwo ? "Join wave two · $" + state.priceUsdc
                                            : "Reserve yours at $" + state.priceUsdc;
   }
 
@@ -1079,7 +1088,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         restoreMark();
         var paid = paidOrder();
         if (paid) { state.order = paid; return setModal("done"); }
-        setModal("details");
+        setModal(state.presaleOver ? "ended" : "details");
       })
       .catch(function (e) {
         state.busy = false;
@@ -1542,6 +1551,17 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
               'and we will hold a piece and send payment details. Pieces held this way come out of the same fifteen.'
       }));
       panel.appendChild(ghostClose());
+
+    } else if (state.modal === "ended") {
+      panel.appendChild(eyebrow("Presale"));
+      panel.appendChild(title("Order has ended."));
+      panel.appendChild(el("p", {
+        style: "margin:0;font-size:14.5px;line-height:1.9;opacity:.72",
+        text: heldOrder()
+          ? "This wallet has an order that was never paid for, and the presale is no longer taking payment."
+          : "This wallet holds no piece, and the presale is no longer taking orders."
+      }));
+      panel.appendChild(ghostClose());
     }
 
     var first = panel.querySelector("button:not([disabled]), input");
@@ -1563,7 +1583,7 @@ figcaption,.caption{margin-top:12px;font-size:9px;letter-spacing:.28em;text-tran
         if (state.modal !== "checking") return;   // they closed it while we asked
         var paid = paidOrder();
         if (paid) { state.order = paid; return setModal("done"); }
-        setModal("details");
+        setModal(state.presaleOver ? "ended" : "details");
       });
     });
   });
